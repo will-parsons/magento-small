@@ -24,11 +24,6 @@ parameter_groups:
   - magento_admin_email
   - magento_admin_user
 
-- label: Infrastructure Settings
-  parameters:
-  - flavor
-  - db_disk
-
 parameters:
 
   eula:
@@ -259,19 +254,29 @@ resources:
 outputs:
 
   ssh_pub_key:
-    description: SSH public key
+    description: SSH Public Key
     value:
       get_attr: [ access_key, public_key ]
 
   ssh_priv_key:
-    description: SSH private key
+    description: SSH Private Key
     value:
       get_attr: [ access_key, private_key ]
 
   lb_ip:
-    description: IP address for the magento site
+    description: Load Balancer IP
     value:
       get_attr: [ caching_lb, PublicIp ]
+
+  server_pub_ip:
+    description: Server Public IP
+    value:
+      get_attr: [ magento_server, networks, public, 0 ]
+
+  magento_domain:
+    description: Magento Domain
+    value:
+      get_param: domain_name
 
   admin_url:
     description: Admin URL
@@ -302,7 +307,12 @@ outputs:
     value:
       get_attr: [ mysql_pw, value ]
 
+  magento_admin_user:
+    description: Magento Admin User
+    value:
+      get_param: magento_admin_user
+
   magento_admin_password:
-    description: Magento admin user password
+    description: Magento Admin Password
     value:
       get_attr: [ magento_admin_pass, value ]
