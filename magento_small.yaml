@@ -33,7 +33,8 @@ parameters:
 
   eula:
     type: boolean
-    description: Agree to terms?
+    label: Agree to terms?
+    description: You must agree to the terms of the Magento Community Edition License
     constraints:
     - allowed_values:
       - True
@@ -44,27 +45,32 @@ parameters:
   magento_admin_fname:
     type: string
     default: Magento
-    description: Admin First Name
+    label: Admin First Name
+    description: Magento administrator first name
 
   magento_admin_lname:
     type: string
     default: Administrator
-    description: Admin Last Name
+    label: Admin Last Name
+    description: Magento administrator last name
 
   magento_admin_email:
     type: string
     default: admin@example.com
-    description: Admin Email
+    label: Admin Email
+    description: Magento administrator contact email
 
   magento_admin_user:
     type: string
     default: admin
-    description: Admin User
+    label: Admin User
+    description: Magento administrator user name
 
   domain_name:
     type: string
     default: example.com
-    description: Site Domain
+    label: Site Domain
+    description: Magento site domain name
 
   flavor:
     type: string
@@ -80,7 +86,8 @@ parameters:
       - 60 GB Performance
       - 90 GB Performance
       - 120 GB Performance
-    description: Server Size
+    label: Server Size
+    description: Amount of RAM for the Magento server
 
   db_disk:
     type: number
@@ -89,7 +96,8 @@ parameters:
     - range:
         min: 10
         max: 500
-    description: Database Disk (in GB)
+    label: Database Disk (in GB)
+    description: Size of the Magento database server disk in GB
 
 resources:
 
