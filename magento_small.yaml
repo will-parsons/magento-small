@@ -265,6 +265,22 @@ outputs:
     value:
       get_attr: [ caching_lb, PublicIp ]
 
+  admin_url:
+    description: Admin URL
+    value:
+      str_replace:
+        template: "https://domain/admin"
+        params:
+          domain: { get_param: domain_name }
+
+  magento_url:
+    description: Store URL
+    value:
+      str_replace:
+        template: "http://domain"
+        params:
+          domain: { get_param: domain_name }
+
   magento_db_name:
     description: Magento database name
     value: magento
