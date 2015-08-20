@@ -94,6 +94,12 @@ parameters:
     label: Database Disk (in GB)
     description: Size of the Magento database server disk in GB
 
+  include_samples:
+    type: boolean
+    default: False
+    label: Include Sample Data?
+    description: Include Magento sample store data
+
 resources:
 
   server_pw:
@@ -155,7 +161,7 @@ resources:
         vhost_user_uid: 1010
         vhost_user_shell: /sbin/nologin
         document_root: "/var/www/vhosts/{{ vhost_domain }}/httpdocs"
-        placeholder_content: 1
+        placeholder_content: { get_param: include_samples }
         redis_host: localhost
         redis_instances:
         - { name: 'fpc', port: '6381', persistent: 'FALSE', maxmemory: '1gb' }
