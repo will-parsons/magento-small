@@ -19,26 +19,25 @@ def magento_is_responding():
 def check():
     env.platform_family = detect.detect()
 
-    assert file.exists('/var/www/magento/.configured'), \
-        '.configured did not exist'
+    assert file.exists('/var/www/vhosts/httpdocs/pkginfo/Mage_All_Latest.txt'), \
+        'Magento pkginfo did not exist'
 
     if env.platform_family == 'rhel':
-        memcache_user = 'memcached'
         php_fpm_process_name = 'php-fpm'
         php_fpm_service_name = 'php-fpm'
     elif env.platform_family == 'debian':
-        memcache_user = 'memcache'
         php_fpm_process_name = 'php5-fpm'
         php_fpm_service_name = 'php5-fpm'
 
-    assert port.is_listening(80), 'port 80 is not listening'
-    # assert port.is_listening(443), 'port 443 is not listenging'
-    assert port.is_listening(3306), 'port 3306 is not listening'
-    assert port.is_listening(9001), 'port 9001 is not listening'
-    assert port.is_listening(11211), 'port 11211 is not listening'
-    assert port.is_listening(11212), 'port 11212 is not listening'
+    # web server is listening
+    assert port.is_listening(80), 'Web port 80 is not listening'
+    # redis is listening
+    assert port.is_listening(6379), 'Redis port 80 is not listening'
+    assert port.is_listening(6380), 'Redis port 80 is not listening'
+    assert port.is_listening(6381), 'Redis port 80 is not listening'
+    
 
-    assert user.exists("magento"), 'magento user does not exist'
+    assert user.exists("nginx"), 'nginx user does not exist'
 
     assert process.is_up("nginx"), 'nginx is not running'
     assert process.is_up(php_fpm_process_name), \
