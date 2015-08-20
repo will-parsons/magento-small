@@ -1,4 +1,5 @@
-#### Single Server
+[![Circle CI](https://circleci.com/gh/rackspace-orchestration-templates/magento-small/tree/master.png?style=shield)](https://circleci.com/gh/rackspace-orchestration-templates/magento-small)
+#### Small Magento Site
 
   A Single Linux server with
   [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/)
