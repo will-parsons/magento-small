@@ -32,9 +32,9 @@ def check():
     # web server is listening
     assert port.is_listening(80), 'Web port 80 is not listening'
     # redis is listening
-    assert port.is_listening(6379), 'Redis port 80 is not listening'
-    assert port.is_listening(6380), 'Redis port 80 is not listening'
-    assert port.is_listening(6381), 'Redis port 80 is not listening'
+    assert port.is_listening(6379), 'Redis port 6379 is not listening'
+    assert port.is_listening(6380), 'Redis port 6380 is not listening'
+    assert port.is_listening(6381), 'Redis port 6381 is not listening'
     
 
     assert user.exists("nginx"), 'nginx user does not exist'
