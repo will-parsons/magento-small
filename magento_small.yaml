@@ -144,6 +144,8 @@ resources:
         #!/bin/bash
         set -e
         git clone --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
+        git clone --progress https://github.com/rack-roles/holland.git /etc/ansible/roles/holland >> $heat_outputs_path.results 2>&1
+        rm -rf /etc/ansible/roles/holland/meta
 
   magento_config:
     type: OS::Heat::SoftwareConfig
@@ -160,6 +162,8 @@ resources:
           - php-fpm
           - redis
           - magento-ce
+          - holland
+          - holland-config
 
   deploy_monitoring_agent:
     type: OS::Heat::SoftwareDeployment
@@ -401,8 +405,6 @@ resources:
         password: { get_attr: [ mysql_pw, value ] }
         databases:
         - magento
-
-  
 
 outputs:
 
