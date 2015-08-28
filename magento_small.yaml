@@ -277,7 +277,7 @@ outputs:
   server_pub_ip:
     description: Server Public IP
     value:
-      get_attr: [ magento_server, networks, public, 0 ]
+      get_attr: [ magento_server, networks, public, 1 ]
 
   magento_domain:
     description: Magento Domain
