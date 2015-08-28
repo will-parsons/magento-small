@@ -19,36 +19,28 @@ def magento_is_responding():
 def check():
     env.platform_family = detect.detect()
 
-    assert file.exists('/var/www/vhosts/httpdocs/pkginfo/Mage_All_Latest.txt'), \
-        'Magento pkginfo did not exist'
-
-    if env.platform_family == 'rhel':
-        php_fpm_process_name = 'php-fpm'
-        php_fpm_service_name = 'php-fpm'
-    elif env.platform_family == 'debian':
-        php_fpm_process_name = 'php5-fpm'
-        php_fpm_service_name = 'php5-fpm'
-
     # web server is listening
     assert port.is_listening(80), 'Web port 80 is not listening'
+
     # redis is listening
     assert port.is_listening(6379), 'Redis port 6379 is not listening'
     assert port.is_listening(6380), 'Redis port 6380 is not listening'
     assert port.is_listening(6381), 'Redis port 6381 is not listening'
-    
 
+    # nginx user is created
     assert user.exists("nginx"), 'nginx user does not exist'
 
+    # processes are running
     assert process.is_up("nginx"), 'nginx is not running'
-    assert process.is_up(php_fpm_process_name), \
-        '{} is not running'.format(php_fpm_process_name)
+    assert process.is_up("php-fpm"), 'php-fpm is not running'
     assert process.is_up("redis"), 'redis is not running'
 
+    # services are enabled
     assert service.is_enabled("nginx"), 'nginx service not enabled'
     assert service.is_enabled("redis"), 'redis service not enabled'
-    assert service.is_enabled(php_fpm_service_name), \
-        '{} not enabled'.format(php_fpm_service_name)
+    assert service.is_enabled("php-fpm"), 'php-fpm not enabled'
 
+    # magento main page is available
     assert magento_is_responding(), 'Magento did not respond as expected.'
 
 
