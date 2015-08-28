@@ -111,6 +111,29 @@ resources:
   magento_admin_pass:
     type: OS::Heat::RandomString
 
+  agent_token:
+    type: Rackspace::CloudMonitoring::AgentToken
+    properties:
+      label: { get_param: "OS::stack_name" }
+
+  monitoring_agent_config:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: script
+      config:
+        str_replace:
+          template: |
+            #!/bin/bash
+            set -e
+            wget http://meta.packages.cloudmonitoring.rackspace.com/centos-7-x86_64/rackspace-cloud-monitoring-meta-stable-1-0.noarch.rpm
+            rpm -Uvh rackspace-cloud-monitoring-meta-stable-1-0.noarch.rpm
+            yum update
+            yum -y install rackspace-monitoring-agent
+            echo "monitoring_token {{token}}" > /etc/rackspace-monitoring-agent.cfg
+            service rackspace-monitoring-agent restart
+          params:
+            "{{token}}": { get_resource: agent_token }
+
   upload_role_config:
     type: OS::Heat::SoftwareConfig
     properties:
@@ -138,6 +161,15 @@ resources:
           - redis
           - magento-ce
 
+  deploy_monitoring_agent:
+    type: OS::Heat::SoftwareDeployment
+    properties:
+      signal_transport: TEMP_URL_SIGNAL
+      config:
+        get_resource: monitoring_agent_config
+      server:
+        get_resource: magento_server
+
   deploy_roles:
     type: OS::Heat::SoftwareDeployment
     properties:
@@ -149,7 +181,9 @@ resources:
 
   deploy_magento:
     type: OS::Heat::SoftwareDeployment
-    depends_on: deploy_roles
+    depends_on:
+    - deploy_monitoring_agent
+    - deploy_roles
     properties:
       signal_transport: TEMP_URL_SIGNAL
       input_values:
@@ -238,6 +272,117 @@ resources:
       metadata:
         rax-heat: { get_param: "OS::stack_id" }
 
+  cpu_check:
+    type: Rackspace::CloudMonitoring::Check
+    depends_on: deploy_monitoring_agent
+    properties:
+      entity: { get_resource: magento_server }
+      type: agent.cpu
+      label: cpu_check
+      details: {}
+      metadata:
+        rax-heat: { get_param: "OS::stack_id" }
+        stack-name: { get_param: "OS::stack_name" }
+      period: 30
+      timeout: 10
+
+  mem_check:
+    type: Rackspace::CloudMonitoring::Check
+    depends_on: deploy_monitoring_agent
+    properties:
+      entity: { get_resource: magento_server }
+      type: agent.memory
+      label: mem_check
+      details: {}
+      metadata:
+        rax-heat: { get_param: "OS::stack_id" }
+        stack-name: { get_param: "OS::stack_name" }
+      period: 30
+      timeout: 10
+
+  http_check:
+    type: Rackspace::CloudMonitoring::Check
+    depends_on: deploy_magento
+    properties:
+      entity: { get_resource: magento_server }
+      type: remote.http
+      label: http_check
+      details:
+        url:
+          str_replace:
+            template: "http://ip"
+            params:
+              ip: { get_attr: [ caching_lb, PublicIp ] }
+      metadata:
+        rax-heat: { get_param: "OS::stack_id" }
+        stack-name: { get_param: "OS::stack_name" }
+      period: 120
+      timeout: 10
+      monitoring_zones_poll:
+      - Northern Virginia (IAD)
+      - Chicago (ORD)
+      - Dallas Fort Worth (DFW)
+      - London (LON)
+      target_hostname: { get_attr: [ caching_lb, PublicIp ] }
+      target_receiver: IPv4
+
+  redis_check_6381:
+    type: Rackspace::CloudMonitoring::Check
+    depends_on:
+    - deploy_monitoring_agent
+    - deploy_magento
+    properties:
+      entity: { get_resource: magento_server }
+      type: agent.redis
+      label: redis_check_6381
+      details:
+        host: localhost
+        port: 6381
+        timeout: 100
+      metadata:
+        rax-heat: { get_param: "OS::stack_id" }
+        stack-name: { get_param: "OS::stack_name" }
+      period: 30
+      timeout: 10
+
+  redis_check_6379:
+    type: Rackspace::CloudMonitoring::Check
+    depends_on:
+    - deploy_monitoring_agent
+    - deploy_magento
+    properties:
+      entity: { get_resource: magento_server }
+      type: agent.redis
+      label: redis_check_6379
+      details:
+        host: localhost
+        port: 6379
+        timeout: 100
+      metadata:
+        rax-heat: { get_param: "OS::stack_id" }
+        stack-name: { get_param: "OS::stack_name" }
+      period: 30
+      timeout: 10
+
+  redis_check_6380:
+    type: Rackspace::CloudMonitoring::Check
+    depends_on:
+    - deploy_monitoring_agent
+    - deploy_magento
+    properties:
+      entity: { get_resource: magento_server }
+      type: agent.redis
+      label: redis_check_6380
+      details:
+        host: localhost
+        port: 6380
+        timeout: 100
+      metadata:
+        rax-heat: { get_param: "OS::stack_id" }
+        stack-name: { get_param: "OS::stack_name" }
+      period: 30
+      timeout: 10  
+
   magento_db:
     type: OS::Trove::Instance
     properties:
@@ -256,6 +401,8 @@ resources:
         password: { get_attr: [ mysql_pw, value ] }
         databases:
         - magento
+
+  
 
 outputs:
 
