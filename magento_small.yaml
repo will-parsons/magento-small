@@ -24,6 +24,11 @@ parameter_groups:
   - magento_admin_email
   - magento_admin_user
 
+- label: Backup Configuration Settings
+  parameters:
+  - rackspace_user_name
+  - rackspace_apikey
+
 parameters:
 
   eula:
@@ -66,6 +71,17 @@ parameters:
     default: example.com
     label: Site Domain
     description: Magento site domain name
+
+  rackspace_user_name:
+    type: string
+    label: User Name
+    description: Your Rackspace Cloud user name for backup agent configuration
+
+  rackspace_apikey:
+    type: string
+    label: API Key
+    description: Your Rackspace Cloud API Key for backup agent configuration
+    hidden: true
 
   flavor:
     type: string
@@ -145,6 +161,7 @@ resources:
         set -e
         git clone --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
         git clone --progress https://github.com/rack-roles/holland.git /etc/ansible/roles/holland >> $heat_outputs_path.results 2>&1
+        git clone --progress https://github.com/rack-roles/cloud-backup-agent.git /etc/ansible/roles/cloud-backup-agent >> $heat_outputs_path.results 2>&1
         rm -rf /etc/ansible/roles/holland/meta
 
   magento_config:
@@ -164,6 +181,7 @@ resources:
           - magento-ce
           - holland
           - holland-config
+          - cloud-backup-agent
 
   deploy_monitoring_agent:
     type: OS::Heat::SoftwareDeployment
@@ -214,6 +232,8 @@ resources:
         magento_admin_email: { get_param: magento_admin_email }
         magento_admin_user: { get_param: magento_admin_user }
         magento_admin_pass: { get_attr: [ magento_admin_pass, value ] }
+        rackspace_apikey: { get_param: rackspace_apikey }
+        rackspace_username: { get_param: rackspace_user_name }
       config:
         get_resource: magento_config
       server:
@@ -275,6 +295,27 @@ resources:
       user_data: { get_attr: [ bootstrap, config ] }
       metadata:
         rax-heat: { get_param: "OS::stack_id" }
+
+  backup:
+    type: Rackspace::Cloud::BackupConfig
+    depends_on: deploy_magento
+    properties:
+      host_ip_address: { get_attr: [ magento_server, accessIPv4 ] }
+      BackupConfigurationName:
+        str_replace:
+          template: stack_backup
+          params:
+            stack: { get_param: "OS::stack_name" }
+      Inclusions:
+      - FilePath: "/var/spool/holland/default"
+      NotifyFailure: true
+      NotifyRecipients: { get_param: magento_admin_email }
+      TimeZoneId: Central Standard Time
+      StartTimeAmPm: AM
+      StartTimeHour: 1
+      StartTimeMinute: 0
+      DayOfWeekId: null
+      HourInterval: null
 
   cpu_check:
     type: Rackspace::CloudMonitoring::Check
@@ -426,7 +467,7 @@ outputs:
   server_pub_ip:
     description: Server Public IP
     value:
-      get_attr: [ magento_server, networks, public, 1 ]
+      get_attr: [ magento_server, accessIPv4 ]
 
   magento_domain:
     description: Magento Domain
