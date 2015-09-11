@@ -1,7 +1,7 @@
 heat_template_version: 2015-10-15
 
 description: |
-  #### Single Server
+  #### Low Traffic Site
 
   A Single Linux server with
   [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/)
