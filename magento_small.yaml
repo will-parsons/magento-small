@@ -131,6 +131,9 @@ resources:
   mysql_pw:
     type: OS::Heat::RandomString
 
+  sftp_password:
+    type: OS::Heat::RandomString
+
   magento_admin_pass:
     type: OS::Heat::RandomString
 
@@ -225,6 +228,7 @@ resources:
         vhost_user_shell: /sbin/nologin
         document_root: "/var/www/vhosts/{{ vhost_domain }}/httpdocs"
         domain_sftp_user: { get_param: domain_sftp_user }
+        domain_sftp_password: { get_attr: [ sftp_password, value ] }
         placeholder_content: { get_param: include_samples }
         redis_host: localhost
         redis_instances:
@@ -496,6 +500,11 @@ outputs:
     description: SFTP User
     value:
       get_param: domain_sftp_user
+
+  domain_sftp_password:
+      description: SFTP User Password
+      value:
+        get_attr: [ sftp_password, value ]
 
   magento_url:
     description: Store URL
