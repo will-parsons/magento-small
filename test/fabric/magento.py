@@ -29,6 +29,9 @@ def check():
 
     # nginx user is created
     assert user.exists("nginx"), 'nginx user does not exist'
+    
+    # domain ftp user is created
+    assert user.exists("magento_sftp"), 'magento_sftp user does not exist'
 
     # processes are running
     assert process.is_up("nginx"), 'nginx is not running'
