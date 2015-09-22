@@ -19,6 +19,7 @@ parameter_groups:
   parameters:
   - eula
   - domain_name
+  - domain_sftp_user
   - magento_admin_fname
   - magento_admin_lname
   - magento_admin_email
@@ -71,6 +72,12 @@ parameters:
     default: example.com
     label: Site Domain
     description: Magento site domain name
+
+  domain_sftp_user:
+    type: string
+    default: magento_sftp
+    label: Domain SFTP user
+    description: Domain and PHP-FPM user
 
   rackspace_user_name:
     type: string
@@ -217,6 +224,7 @@ resources:
         vhost_user_uid: 1010
         vhost_user_shell: /sbin/nologin
         document_root: "/var/www/vhosts/{{ vhost_domain }}/httpdocs"
+        domain_sftp_user: { get_param: domain_sftp_user }
         placeholder_content: { get_param: include_samples }
         redis_host: localhost
         redis_instances:
@@ -483,6 +491,11 @@ outputs:
         template: "https://domain/admin"
         params:
           domain: { get_param: domain_name }
+
+  domain_sftp_user:
+    description: SFTP User
+    value:
+      get_param: domain_sftp_user
 
   magento_url:
     description: Store URL
