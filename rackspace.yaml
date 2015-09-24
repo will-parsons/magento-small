@@ -71,10 +71,10 @@ instructions: |
 
   [Rackspace Cloud Databases](http://www.rackspace.com/en-us/cloud/databases) provides
   the database backend running
-  [Percona](https://www.percona.com/software/mysql-database/percona-server) in a
-  two-node replica set. 
+  [Percona](https://www.percona.com/software/mysql-database/percona-server) on a single
+  instance. 
 
-  MySQL backups are performed nightly by
+  Database backups are performed nightly by
   [Holland](https://github.com/holland-backup/holland).  Backups can be found
   in /var/spool/holland. You can adjust this backup schedule by editing the cron job found
   at /etc/cron.d/holland. Additionally, backups are archived daily using
