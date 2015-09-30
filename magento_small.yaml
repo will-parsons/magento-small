@@ -88,7 +88,7 @@ parameters:
     type: string
     label: API Key
     description: Your Rackspace Cloud API Key for backup agent configuration
-    hidden: true
+    hidden: True
 
   flavor:
     type: string
@@ -305,8 +305,6 @@ resources:
       config_drive: true
       user_data_format: SOFTWARE_CONFIG
       user_data: { get_attr: [ bootstrap, config ] }
-      networks:
-      - uuid: 11111111-1111-1111-1111-111111111111
       metadata:
         rax-heat: { get_param: "OS::stack_id" }
 
@@ -314,7 +312,7 @@ resources:
     type: Rackspace::Cloud::BackupConfig
     depends_on: deploy_magento
     properties:
-      host_ip_address: { get_attr: [ magento_server, networks, private, 0 ] }
+      host_ip_address: { get_attr: [ magento_server, accessIPv4 ] }
       BackupConfigurationName:
         str_replace:
           template: stack_backup
@@ -479,9 +477,9 @@ outputs:
       get_attr: [ caching_lb, PublicIp ]
 
   server_pub_ip:
-    description: Server Private IP
+    description: Server Public IP
     value:
-      get_attr: [ magento_server, networks, private, 0 ]
+      get_attr: [ magento_server, accessIPv4 ]
 
   magento_domain:
     description: Magento Domain
