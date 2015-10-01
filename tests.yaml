@@ -5,7 +5,7 @@ test-cases:
       eula: true
       rackspace_user_name: { get_env: OS_USERNAME }
       rackspace_apikey: { get_env: RAX_API_KEY }
-    timeout: 30 # Deployment should complete in under 30 minutes
+    timeout: 60 # Deployment should complete in under an hour
   resource_tests: # Tests to run on the resources themselves
     ssh_private_key: { get_output: ssh_priv_key } # Fetch from output-list of stack
     ssh_key_file: tmp/private_key # File to write with ssh_private_key
