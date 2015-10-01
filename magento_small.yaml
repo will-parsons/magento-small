@@ -308,26 +308,26 @@ resources:
       metadata:
         rax-heat: { get_param: "OS::stack_id" }
 
-  backup:
-    type: Rackspace::Cloud::BackupConfig
-    depends_on: deploy_magento
-    properties:
-      host_ip_address: { get_attr: [ magento_server, accessIPv4 ] }
-      BackupConfigurationName:
-        str_replace:
-          template: stack_backup
-          params:
-            stack: { get_param: "OS::stack_name" }
-      Inclusions:
-      - FilePath: "/var/spool/holland/default"
-      NotifyFailure: true
-      NotifyRecipients: { get_param: magento_admin_email }
-      TimeZoneId: Central Standard Time
-      StartTimeAmPm: AM
-      StartTimeHour: 1
-      StartTimeMinute: 0
-      DayOfWeekId: null
-      HourInterval: null
+#  backup:
+#    type: Rackspace::Cloud::BackupConfig
+#    depends_on: deploy_magento
+#    properties:
+#      host_ip_address: { get_attr: [ magento_server, accessIPv4 ] }
+#      BackupConfigurationName:
+#        str_replace:
+#          template: stack_backup
+#          params:
+#            stack: { get_param: "OS::stack_name" }
+#      Inclusions:
+#      - FilePath: "/var/spool/holland/default"
+#      NotifyFailure: true
+#      NotifyRecipients: { get_param: magento_admin_email }
+#      TimeZoneId: Central Standard Time
+#      StartTimeAmPm: AM
+#      StartTimeHour: 1
+#      StartTimeMinute: 0
+#      DayOfWeekId: null
+#      HourInterval: null
 
   cpu_check:
     type: Rackspace::CloudMonitoring::Check
