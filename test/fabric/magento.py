@@ -37,7 +37,7 @@ def check():
     assert process.is_up("nginx"), 'nginx is not running'
     assert process.is_up("php-fpm"), 'php-fpm is not running'
     assert process.is_up("redis"), 'redis is not running'
-    assert process.is_up("rackspace-monitoring-agent"), 'Monitoring agent is not running'
+    assert process.is_up("rackspace-monit"), 'Monitoring agent is not running'
     assert process.is_up("driveclient"), 'Backup agent is not running'
     
     # holland backups are configured
