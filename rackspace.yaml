@@ -57,7 +57,7 @@ instructions: |
   [Nginx](http://nginx.org/en/) is used as the web server and listens on port
   80 to handle web traffic. The configuration for your site can be
   found in /etc/nginx/conf.d/. There will be a default site
-  configuration and a seperate one for your domain. Magento itself is
+  configuration and a separate one for your domain. Magento itself is
   installed in /var/www/vhosts. You will find a directory with the name of
   website you entered as a part of this deployment.
 
@@ -70,7 +70,7 @@ instructions: |
   [Redis](http://redis.io/). Redis is an in-memory, high performance key-value
   and is used for caching data and persisting user session data. This enhances
   the performance of your site by reducing expensive database calls. Three caches
-  are configured: two for data caching and one for session persistance. You can
+  are configured: two for data caching and one for session persistence. You can
   find the configuration of these caches in /etc/redis/.
 
   [Lsyncd](https://github.com/axkibe/lsyncd) has been installed in order to
@@ -109,7 +109,7 @@ instructions: |
   You can add additional servers to this deployment by updating the
   "server_count" parameter for this stack.  This deployment is
   intended for low to medium traffic production websites and can be
-  scaled as needed to accomodate future growth.
+  scaled as needed to accommodate future growth.
 
   This stack will not ensure that Magento or the servers themselves are
   up-to-date.  You are responsible for ensuring that all software is
@@ -117,11 +117,16 @@ instructions: |
 
 user-input-required: true
 description: |
-  A Single Linux server with
-  [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/)
-  installed with [nginx](http://nginx.org/en/), [PHP FPM](http://php-fpm.org/about/), a
-  Cloud Load Balancer for content caching, and a Cloud Database running
-  [Percona](https://www.percona.com/software/mysql-database/percona-server).
+  This stack is intended for low to medium traffic production
+  websites and can be scaled as needed to accommodate future
+  growth.  This stack includes a Cloud Load Balancer, Cloud
+  Database, and a Master server (plus optional secondary
+  servers).  It also includes Cloud Monitoring and Cloud
+  Backups.
 
-  This deployment is intended for simple test cases and low traffic scenarios. It is not
-  designed for high traffic events and has limited scalability.
+  This stack is running 
+  [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/),
+  [nginx](http://nginx.org/en/),
+  and [PHP FPM](http://php-fpm.org/about/).
+  with a Cloud Database running
+  [Percona](https://www.percona.com/software/mysql-database/percona-server).
