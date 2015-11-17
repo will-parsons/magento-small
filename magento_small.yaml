@@ -1,40 +1,68 @@
 heat_template_version: 2015-10-15
 
 description: |
-  #### Low Traffic Site
+ #### Production
 
-  A Single Linux server with
-  [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/)
-  installed with [nginx](http://nginx.org/en/), [PHP FPM](http://php-fpm.org/about/), a
-  Cloud Load Balancer for content caching, and a Cloud Database running
-  [Percona](https://www.percona.com/software/mysql-database/percona-server).
+ This stack is intended for low to medium traffic production
+ websites and can be scaled as needed to accomodate future
+ growth.  This stack includes a Cloud Load Balancer, Cloud
+ Database, and a Master server (plus optional secondary
+ servers).  It also includes Cloud Monitoring and Cloud
+ Backups.
 
-  This deployment is intended for simple test cases and low traffic scenarios. It is not
-  designed for high traffic events and has limited scalability.
-
+ This stack is running 
+ [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/),
+ [nginx](http://nginx.org/en/),
+ and [PHP FPM](http://php-fpm.org/about/).
+ with a Cloud Database running
+ [Percona](https://www.percona.com/software/mysql-database/percona-server).
 
 parameter_groups:
-
 - label: Magento Settings
   parameters:
-  - eula
-  - domain_name
-  - domain_sftp_user
-  - magento_admin_fname
-  - magento_admin_lname
-  - magento_admin_email
-  - magento_admin_user
-
-- label: Backup Configuration Settings
-  parameters:
-  - rackspace_user_name
-  - rackspace_apikey
+  - magento_url
+  - magento_user
+  - magento_email
+  - magento_fname
+  - magento_lname
+  - magento_eula
 
 parameters:
-
-  eula:
+  #Magento Customization
+  magento_url:
+    type: string
+    default: example.com
+    label: Site Domain
+    description: Domain to use with Magento Site
+    constraints:
+    - allowed_pattern: "^[a-zA-Z0-9.-]{1,255}.[a-zA-Z]{2,15}$"
+      description: Must be a valid domain name
+  magento_user:
+    type: string
+    default: admin
+    label: Magento Admin Username
+    description: Username for Magento admin
+    constraints:
+    - allowed_pattern: "^[a-zA-Z0-9]*$"
+      description: Only can contain A-Z and 0-9
+  magento_fname:
+    type: string
+    default: Joe
+    label: Magento Admin First Name
+    description: First name for Magento admin
+  magento_lname:
+    type: string
+    default: User
+    label: Magento Admin Last Name
+    description: Last name for Magento admin
+  magento_email:
+    type: string
+    default: admin@example.com
+    label: Magento Admin E-Mail
+    description: E-Mail for Magento admin
+  magento_eula:
     type: boolean
-    label: Agree to terms?
+    label: Agree to Terms?
     description: You must agree to the terms of the Magento Community Edition License
     constraints:
     - allowed_values:
@@ -42,72 +70,27 @@ parameters:
       description: |
         You must agree to the Magento Community Edition License
         which can be found here: http://opensource.org/licenses/osl-3.0.php
-
-  magento_admin_fname:
+  magento_samples:
+    type: boolean
+    default: False
+    label: Include Sample Data?
+    description: Include Magento Sample Data
+  #Advanced Options
+  server_flavor:
     type: string
-    default: Magento
-    label: Admin First Name
-    description: Magento administrator first name
-
-  magento_admin_lname:
-    type: string
-    default: Administrator
-    label: Admin Last Name
-    description: Magento administrator last name
-
-  magento_admin_email:
-    type: string
-    default: admin@example.com
-    label: Admin Email
-    description: Magento administrator contact email
-
-  magento_admin_user:
-    type: string
-    default: admin
-    label: Admin User
-    description: Magento administrator user name
-
-  domain_name:
-    type: string
-    default: example.com
-    label: Site Domain
-    description: Magento site domain name
-
-  domain_sftp_user:
-    type: string
-    default: magento_sftp
-    label: Domain SFTP user
-    description: Domain and PHP-FPM user
-
-  rackspace_user_name:
-    type: string
-    label: User Name
-    description: Your Rackspace Cloud user name for backup agent configuration
-
-  rackspace_apikey:
-    type: string
-    label: API Key
-    description: Your Rackspace Cloud API Key for backup agent configuration
-    hidden: True
-
-  flavor:
-    type: string
-    default: 8 GB Performance
+    default: 8 GB General Purpose v1
+    label: Flavor for Magento Server
+    description: Flavor of Cloud Server to use for Magento
     constraints:
     - allowed_values:
-      - 8GB Standard Instance
-      - 15GB Standard Instance
-      - 30GB Standard Instance
-      - 8 GB Performance
-      - 15 GB Performance
-      - 30 GB Performance
-      - 60 GB Performance
-      - 90 GB Performance
-      - 120 GB Performance
-    label: Server Size
-    description: Amount of RAM for the Magento server
-
-  db_disk:
+      - 8 GB General Purpose v1
+  server_image:
+    type: string
+    default: 96a06fc9-c230-422c-81d4-562f97517a5b
+    constraints:
+    - allowed_values:
+      - 96a06fc9-c230-422c-81d4-562f97517a5b
+  database_disk:
     type: number
     default: 10
     constraints:
@@ -115,51 +98,65 @@ parameters:
         min: 10
         max: 500
     label: Database Disk (in GB)
-    description: Size of the Magento database server disk in GB
-
-  include_samples:
-    type: boolean
-    default: False
-    label: Include Sample Data?
-    description: Include Magento sample store data
+    description: Size of the Magento Cloud Database volume in GB
+  database_flavor:
+    type: string
+    default: 4GB Instance
+    label: Cloud Database Flavor
+    description: Flavor for the Magento Cloud Database
+    constraints:
+    - allowed_values:
+      - 4GB Instance
+      - 8GB Instance
+      - 16GB Instance
+      - 32GB Instance
+      - 64GB Instance
+  server_count:
+    type: number
+    default: 0
+    constraints:
+    - range:
+        min: 0
+        max: 10
 
 resources:
-
-  server_pw:
+  #Passwords
+  percona_root_pw:
     type: OS::Heat::RandomString
-
-  mysql_pw:
+  magento_pass:
     type: OS::Heat::RandomString
-
-  sftp_password:
+  database_pass:
     type: OS::Heat::RandomString
-
-  magento_admin_pass:
+  holland_pass:
     type: OS::Heat::RandomString
-
-  agent_token:
-    type: Rackspace::CloudMonitoring::AgentToken
+  #SSH Key
+  ssh_key:
+    type: OS::Nova::KeyPair
     properties:
-      label: { get_param: "OS::stack_name" }
-
-  monitoring_agent_config:
-    type: OS::Heat::SoftwareConfig
+      name: { get_param: "OS::stack_id" }
+      save_private_key: true
+  #Cloud Database
+  magento_database:
+    type: OS::Trove::Instance
     properties:
-      group: script
-      config:
+      name:
         str_replace:
-          template: |
-            #!/bin/bash
-            set -e
-            wget http://meta.packages.cloudmonitoring.rackspace.com/centos-7-x86_64/rackspace-cloud-monitoring-meta-stable-1-0.noarch.rpm
-            rpm -Uvh rackspace-cloud-monitoring-meta-stable-1-0.noarch.rpm
-            yum update
-            yum -y install rackspace-monitoring-agent
-            echo "monitoring_token {{token}}" > /etc/rackspace-monitoring-agent.cfg
-            service rackspace-monitoring-agent restart
+          template: stack_Database
           params:
-            "{{token}}": { get_resource: agent_token }
-
+            stack: { get_param: "OS::stack_name" }
+      flavor: { get_param: database_flavor }
+      size: { get_param: database_disk }
+      datastore_type: percona
+      databases:
+      - name: magento
+      users:
+      - name: magento
+        password: { get_attr: [database_pass, value] }
+        databases: [magento]
+      - name: holland
+        password: { get_attr: [holland_pass, value] }
+        databases: [magento]
+  #Software Configurations
   upload_role_config:
     type: OS::Heat::SoftwareConfig
     properties:
@@ -169,207 +166,117 @@ resources:
       config: |
         #!/bin/bash
         set -e
-        git clone --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
-        git clone --progress https://github.com/rack-roles/holland.git /etc/ansible/roles/holland >> $heat_outputs_path.results 2>&1
-        git clone --progress https://github.com/rack-roles/cloud-backup-agent.git /etc/ansible/roles/cloud-backup-agent >> $heat_outputs_path.results 2>&1
-        rm -rf /etc/ansible/roles/holland/meta
+        git clone --progress https://github.com/chrishultin/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
 
   magento_config:
     type: OS::Heat::SoftwareConfig
     properties:
       group: ansible
+      inputs:
+      - default: "[]"
+        name: lsync_dirs
+        type: CommaDelimitedList
+      - default: "[]"
+        name: lsync_servers
+        type: CommaDelimitedList
+      - default: "[]"
+        name: firewall_nodes
+        type: CommaDelimitedList
+      - default: "[]"
+        name: firewall_node_rules
+        type: CommaDelimitedList
       config: |
         ---
         - name: Install and configure Magento
           hosts: localhost
           connection: local
           roles:
+          - common
           - nginx
-          - php
-          - php-fpm
-          - redis
-          - magento-ce
           - holland
-          - holland-config
-          - cloud-backup-agent
-
-  deploy_monitoring_agent:
-    type: OS::Heat::SoftwareDeployment
-    properties:
-      signal_transport: TEMP_URL_SIGNAL
-      config:
-        get_resource: monitoring_agent_config
-      server:
-        get_resource: magento_server
-
+          - redis
+          - memcache
+          - php-fpm
+          - magento-ce
+          - lsync
+          - firewall
   deploy_roles:
     type: OS::Heat::SoftwareDeployment
     properties:
       signal_transport: TEMP_URL_SIGNAL
-      config:
-        get_resource: upload_role_config
-      server:
-        get_resource: magento_server
-
+      config: { get_resource: upload_role_config }
+      server: { get_resource: magento_server }
   deploy_magento:
     type: OS::Heat::SoftwareDeployment
-    depends_on:
-    - deploy_monitoring_agent
-    - deploy_roles
+    depends_on: deploy_roles
     properties:
       signal_transport: TEMP_URL_SIGNAL
       input_values:
-        tz: "America/Chicago" 
-        webserver: nginx
-        vhost_domain: { get_param: domain_name }
-        vhost_aliases: "www.{{ vhost_domain }}"
-        vhost_user: nginx
-        vhost_user_uid: 1010
-        vhost_user_shell: /sbin/nologin
-        document_root: "/var/www/vhosts/{{ vhost_domain }}/httpdocs"
-        domain_sftp_user: { get_param: domain_sftp_user }
-        domain_sftp_password: { get_attr: [ sftp_password, value ] }
-        placeholder_content: { get_param: include_samples }
-        redis_host: localhost
+        tz: "America/Chicago"
+        nginx_vhost_str: { get_param: magento_url }
+        holland_mysql_user: "holland"
+        holland_mysql_password: { get_attr: [holland_pass, value] }
+        holland_mysql_host: { get_attr: [magento_database, hostname] }
+        holland_create_user: no
         redis_instances:
         - { name: 'fpc', port: '6381', persistent: 'FALSE', maxmemory: '1gb' }
         - { name: 'obj', port: '6379', persistent: 'FALSE', maxmemory: '1gb' }
         - { name: 'ses', port: '6380', persistent: 'TRUE', maxmemory: '1gb' }
-        mysql_host_ip: { get_attr: [ magento_db, hostname ] }
-        magento_db_name: magento
-        magento_db_user: magento
-        magento_db_password: { get_attr: [ mysql_pw, value ] }
-        magento_admin_fname: { get_param: magento_admin_fname }
-        magento_admin_lname: { get_param: magento_admin_lname }
-        magento_admin_email: { get_param: magento_admin_email }
-        magento_admin_user: { get_param: magento_admin_user }
-        magento_admin_pass: { get_attr: [ magento_admin_pass, value ] }
-        rackspace_apikey: { get_param: rackspace_apikey }
-        rackspace_username: { get_param: rackspace_user_name }
-      config:
-        get_resource: magento_config
-      server:
-        get_resource: magento_server
-
-  caching_lb:
-    type: Rackspace::Cloud::LoadBalancer
-    properties:
-      name:
-        str_replace:
-          template: stack-lb
-          params:
-            stack: { get_param: "OS::stack_name" }
-      port: 80
-      virtualIps:
-      - ipVersion: IPV4
-        type: PUBLIC
-      protocol: HTTP
-      contentCaching: ENABLED
-      healthMonitor:
-        attemptsBeforeDeactivation: 3
-        timeout: 10
-        type: HTTP
-        delay: 10
-        type: HTTP
-      nodes:
-      - addresses: [ { get_attr: [ magento_server, networks, private, 0 ] } ]
-        port: 80
-      metadata:
-        rax-heat: { get_param: "OS::stack_id" }
-
-  bootstrap:
-    type: https://raw.githubusercontent.com/rackspace-orchestration-templates/software-config-bootstrap/master/bootconfig_yum_ansible.yaml
-
-  access_key:
-    type: OS::Nova::KeyPair
-    properties:
-      name:
-        str_replace:
-          template: stack-keypair
-          params:
-            stack: { get_param: "OS::stack_name" }
-      save_private_key: True
-
+        magento_db_user: "magento"
+        magento_db_password: { get_attr: [database_pass, value] }
+        magento_db_name: "magento"
+        mysql_host_ip: { get_attr: [magento_database, hostname] }
+        magento_sftp_user: "magento"
+        magento_sftp_password: { get_attr: [magento_pass, value] }
+        magento_version: 1.9.1.0
+        magento_sample_content_version: 1.9.1.0
+        magento_sample_content: { get_param: magento_samples }
+        magento_vhost_domain: { get_param: magento_url }
+        magento_admin_user: { get_param: magento_user }
+        magento_admin_pass: { get_attr: [magento_pass, value] }
+        magento_admin_fname: { get_param: magento_fname }
+        magento_admin_lname: { get_param: magento_lname }
+        magento_admin_email: { get_param: magento_email }
+        lsync_private_key: { get_attr: [ssh_key, private_key] }
+        lsync_dirs: ['/var/www/vhosts', '/etc/nginx/conf.d']
+        lsync_servers: { get_attr: [magento_secondary, private_ip] }
+        firewall_global_rules: [ "0.0.0.0,0,22,tcp", "0.0.0.0,0,80,tcp", "0.0.0.0,0,443,tcp"]
+        firewall_nodes: { get_attr: [magento_secondary, private_ip] }
+        firewall_node_rules: []
+      config: { get_resource: magento_config }
+      server: { get_resource: magento_server }
+  #Master Server
   magento_server:
     type: OS::Nova::Server
     properties:
-      name:
-        str_replace:
-          template: stack-magento-server
-          params:
-            stack: { get_param: "OS::stack_name" }
-      image: CentOS 7 (PVHVM)
-      key_name: { get_resource: access_key }
-      flavor: { get_param: flavor }
+      name: { get_param: "OS::stack_name" }
+      image: { get_param: server_image }
+      flavor: { get_param: server_flavor }
+      key_name: { get_resource: ssh_key }
       software_config_transport: POLL_TEMP_URL
       config_drive: true
       user_data_format: SOFTWARE_CONFIG
-      user_data: { get_attr: [ bootstrap, config ] }
       metadata:
         rax-heat: { get_param: "OS::stack_id" }
-
-#  backup:
-#    type: Rackspace::Cloud::BackupConfig
-#    depends_on: deploy_magento
-#    properties:
-#      host_ip_address: { get_attr: [ magento_server, accessIPv4 ] }
-#      BackupConfigurationName:
-#        str_replace:
-#          template: stack_backup
-#          params:
-#            stack: { get_param: "OS::stack_name" }
-#      Inclusions:
-#      - FilePath: "/var/spool/holland/default"
-#      NotifyFailure: true
-#      NotifyRecipients: { get_param: magento_admin_email }
-#      TimeZoneId: Central Standard Time
-#      StartTimeAmPm: AM
-#      StartTimeHour: 1
-#      StartTimeMinute: 0
-#      DayOfWeekId: null
-#      HourInterval: null
-
-  cpu_check:
-    type: Rackspace::CloudMonitoring::Check
-    depends_on: deploy_monitoring_agent
-    properties:
-      entity: { get_resource: magento_server }
-      type: agent.cpu
-      label: cpu_check
-      details: {}
-      metadata:
-        rax-heat: { get_param: "OS::stack_id" }
-        stack-name: { get_param: "OS::stack_name" }
-      period: 30
-      timeout: 10
-
-  mem_check:
-    type: Rackspace::CloudMonitoring::Check
-    depends_on: deploy_monitoring_agent
-    properties:
-      entity: { get_resource: magento_server }
-      type: agent.memory
-      label: mem_check
-      details: {}
-      metadata:
-        rax-heat: { get_param: "OS::stack_id" }
-        stack-name: { get_param: "OS::stack_name" }
-      period: 30
-      timeout: 10
-
-  http_check:
+        build_config: "backup_agent_only,monitoring_defaults"
+  #Monitoring Checks
+  magento_server_http_check:
     type: Rackspace::CloudMonitoring::Check
     depends_on: deploy_magento
     properties:
       entity: { get_resource: magento_server }
       type: remote.http
-      label: http_check
+      label:
+        str_replace:
+          template: stack Master HTTP Check
+          params:
+            stack: { get_param: "OS::stack_name" }
       details:
         url:
           str_replace:
-            template: "http://ip"
+            template: "http://ipaddr"
             params:
-              ip: { get_attr: [ caching_lb, PublicIp ] }
+              ipaddr: { get_attr: [magento_server, accessIPv4] }
       metadata:
         rax-heat: { get_param: "OS::stack_id" }
         stack-name: { get_param: "OS::stack_name" }
@@ -380,158 +287,154 @@ resources:
       - Chicago (ORD)
       - Dallas Fort Worth (DFW)
       - London (LON)
-      target_hostname: { get_attr: [ caching_lb, PublicIp ] }
+      target_hostname: { get_attr: [magento_server, accessIPv4] }
       target_receiver: IPv4
-
-  redis_check_6381:
+  load_balancer_http_check:
     type: Rackspace::CloudMonitoring::Check
-    depends_on:
-    - deploy_monitoring_agent
-    - deploy_magento
+    depends_on: load_balancer
     properties:
       entity: { get_resource: magento_server }
-      type: agent.redis
-      label: redis_check_6381
+      type: remote.http
+      label:
+        str_replace:
+          template: stack Load Balancer HTTP Check
+          params:
+            stack: { get_param: "OS::stack_name" }
       details:
-        host: localhost
-        port: 6381
-        timeout: 100
+        url:
+          str_replace:
+            template: "http://ipaddr"
+            params:
+              ipaddr: { get_attr: [load_balancer, PublicIp] }
       metadata:
         rax-heat: { get_param: "OS::stack_id" }
         stack-name: { get_param: "OS::stack_name" }
-      period: 30
+      period: 120
       timeout: 10
-
-  redis_check_6379:
-    type: Rackspace::CloudMonitoring::Check
-    depends_on:
-    - deploy_monitoring_agent
-    - deploy_magento
+      monitoring_zones_poll:
+      - Northern Virginia (IAD)
+      - Chicago (ORD)
+      - Dallas Fort Worth (DFW)
+      - London (LON)
+      target_hostname: { get_attr: [load_balancer, PublicIp] }
+      target_receiver: IPv4
+  #Cloud Backup
+  magento_backup:
+    type: Rackspace::Cloud::BackupConfig
+    depends_on: magento_server
     properties:
-      entity: { get_resource: magento_server }
-      type: agent.redis
-      label: redis_check_6379
-      details:
-        host: localhost
-        port: 6379
-        timeout: 100
-      metadata:
-        rax-heat: { get_param: "OS::stack_id" }
-        stack-name: { get_param: "OS::stack_name" }
-      period: 30
-      timeout: 10
-
-  redis_check_6380:
-    type: Rackspace::CloudMonitoring::Check
-    depends_on:
-    - deploy_monitoring_agent
-    - deploy_magento
+      host_ip_address: { get_attr: [magento_server, accessIPv4] }
+      BackupConfigurationName:
+        str_replace:
+          template: stack Weekly Backup
+          params:
+            stack: { get_param: "OS::stack_name" }
+      Inclusions:
+      - FilePath: "/var/spool/holland"
+        FileItemType: "Folder"
+      - FilePath: "/var/www/"
+        FileItemType: "Folder"
+      NotifyFailure: true
+      NotifyRecipients: { get_param: magento_email }
+      TimeZoneId: Central Standard Time
+      StartTimeAmPm: AM
+      StartTimeHour: 1
+      StartTimeMinute: 0
+      HourInterval: null
+      DayOfWeekId: 0
+      Frequency: "Weekly"
+      VersionRetention: 30
+  #Secondary Server
+  magento_secondary:
+    type: OS::Heat::ResourceGroup
     properties:
-      entity: { get_resource: magento_server }
-      type: agent.redis
-      label: redis_check_6380
-      details:
-        host: localhost
-        port: 6380
-        timeout: 100
-      metadata:
-        rax-heat: { get_param: "OS::stack_id" }
-        stack-name: { get_param: "OS::stack_name" }
-      period: 30
-      timeout: 10  
-
-  magento_db:
-    type: OS::Trove::Instance
+      count: { get_param: server_count }
+      resource_def:
+        type: https://raw.githubusercontent.com/rackspace-orchestration-templates/magento-small/master/magento_small.yaml
+        properties:
+          ssh_key: { get_resource: ssh_key }
+          parent_stack_id: { get_param: "OS::stack_id" }
+          server_image: { get_param: server_image }
+          server_flavor: { get_param: server_flavor }
+          apache_default_domain: { get_param: magento_url }
+          server_name:
+            str_replace:
+              template: stack-secondary-%index%
+              params:
+                stack: { get_param: "OS::stack_name" }
+  #Cloud Load Balancer
+  load_balancer:
+    type: Rackspace::Cloud::LoadBalancer
+    depends_on:
+    - deploy_magento
+    - magento_secondary
     properties:
       name:
         str_replace:
-          template: stack-magento-db
+          template: stack_Load_Balancer
           params:
             stack: { get_param: "OS::stack_name" }
-      datastore_type: percona
-      flavor: 4GB Instance
-      size: { get_param: db_disk }
-      databases:
-      - name: magento
-      users:
-      - name: magento
-        password: { get_attr: [ mysql_pw, value ] }
-        databases:
-        - magento
+      nodes:
+      - addresses: [ { get_attr: [magento_server, networks, private, 0] } ]
+        port: 80
+        condition: ENABLED
+#      - addresses: { get_attr: [magento_secondary, private_ip] }
+#        port: 80
+#        condition: ENABLED
+      port: 80
+      protocol: HTTP
+      algorithm: ROUND_ROBIN
+      contentCaching: ENABLED
+      virtualIps:
+      - type: PUBLIC
+        ipVersion: IPV4
+      sessionPersistence: HTTP_COOKIE
+      metadata:
+        rax-heat: { get_param: "OS::stack_id" }
 
 outputs:
-
-  ssh_pub_key:
-    description: SSH Public Key
-    value:
-      get_attr: [ access_key, public_key ]
-
-  ssh_priv_key:
-    description: SSH Private Key
-    value:
-      get_attr: [ access_key, private_key ]
-
-  lb_ip:
-    description: Load Balancer IP
-    value:
-      get_attr: [ caching_lb, PublicIp ]
-
-  server_pub_ip:
-    description: Server Public IP
-    value:
-      get_attr: [ magento_server, accessIPv4 ]
-
-  magento_domain:
-    description: Magento Domain
-    value:
-      get_param: domain_name
-
-  admin_url:
-    description: Admin URL
-    value:
-      str_replace:
-        template: "https://domain/admin"
-        params:
-          domain: { get_param: domain_name }
-
-  domain_sftp_user:
-    description: SFTP User
-    value:
-      get_param: domain_sftp_user
-
-  domain_sftp_password:
-      description: SFTP User Password
-      value:
-        get_attr: [ sftp_password, value ]
-
-  magento_url:
-    description: Store URL
-    value:
-      str_replace:
-        template: "http://domain"
-        params:
-          domain: { get_param: domain_name }
-
-  magento_db_name:
-    description: Magento database name
-    value: magento
-
-  magento_db_user:
-    description: Magento database user
-    value: magento
-
-  magento_db_password:
-    description: Magento database user password
-    value:
-      get_attr: [ mysql_pw, value ]
-
-  magento_admin_user:
+  magento_login_user:
     description: Magento Admin User
     value:
-      get_param: magento_admin_user
-
-  magento_admin_password:
+      get_param: magento_user
+  magento_login_password:
     description: Magento Admin Password
     value:
-      get_attr: [ magento_admin_pass, value ]
-
+      get_attr: [magento_pass, value]
+  magento_public_ip:
+    description: Load Balancer IP
+    value:
+      get_attr: [load_balancer, PublicIp]
+  magento_admin_url:
+    description: Magento Admin URL
+    value:
+      str_replace:
+        template: "https://domain/admin/"
+        params:
+          domain: { get_param: magento_url }
+  magento_public_url:
+    description: Magento Public URL
+    value:
+      str_replace:
+        template: "http://domain/"
+        params:
+          domain: { get_param: magento_url }
+  mysql_user:
+    description: Database User
+    value: "magento"
+  mysql_password:
+    description: Database Password
+    value:
+      get_attr: [database_pass, value]
+  ssh_private_key:
+    description: SSH Private Key
+    value:
+      get_attr: [ssh_key, private_key]
+  server_ip:
+    description: Server Public IP
+    value:
+      get_attr: [magento_server, accessIPv4]
+  secondary_ips:
+    description: Secondary Node IPs
+    value:
+      get_attr: [magento_secondary, public_ip]
