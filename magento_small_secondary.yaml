@@ -19,10 +19,10 @@ parameters:
       - 8 GB General Purpose v1
   server_image:
     type: string
-    default: 96a06fc9-c230-422c-81d4-562f97517a5b
+    default: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
     constraints:
     - allowed_values:
-      - 96a06fc9-c230-422c-81d4-562f97517a5b
+      - f4bbbce2-50b0-4b07-bf09-96c175a45f4b
   ssh_key:
     type: string
     label: SSH Key
@@ -44,7 +44,7 @@ resources:
       config: |
         #!/bin/bash
         set -e
-        git clone --progress https://github.com/chrishultin/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
+        git clone -b 'update-standardization' --single-branch --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
 
   magento_config:
     type: OS::Heat::SoftwareConfig

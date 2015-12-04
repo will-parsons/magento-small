@@ -83,13 +83,14 @@ parameters:
     description: Flavor of Cloud Server to use for Magento
     constraints:
     - allowed_values:
+      - 4 GB General Purpose v1
       - 8 GB General Purpose v1
-  server_image:
-    type: string
-    default: 96a06fc9-c230-422c-81d4-562f97517a5b
-    constraints:
-    - allowed_values:
-      - 96a06fc9-c230-422c-81d4-562f97517a5b
+#  server_image:
+#    type: string
+#    default: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
+#    constraints:
+#    - allowed_values:
+#      - f4bbbce2-50b0-4b07-bf09-96c175a45f4b
   database_disk:
     type: number
     default: 10
@@ -121,8 +122,6 @@ parameters:
 
 resources:
   #Passwords
-  percona_root_pw:
-    type: OS::Heat::RandomString
   magento_pass:
     type: OS::Heat::RandomString
   database_pass:
@@ -166,9 +165,26 @@ resources:
       config: |
         #!/bin/bash
         set -e
-        git clone --progress https://github.com/chrishultin/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
+        git clone -b 'update-standardization' --single-branch --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
 
   magento_config:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ansible
+      config: |
+        ---
+        - name: Install and configure Magento
+          hosts: localhost
+          connection: local
+          roles:
+          - common
+          - nginx
+          - holland
+          - redis
+          - memcache
+          - php-fpm
+          - magento-ce
+  other_config:
     type: OS::Heat::SoftwareConfig
     properties:
       group: ansible
@@ -187,17 +203,10 @@ resources:
         type: CommaDelimitedList
       config: |
         ---
-        - name: Install and configure Magento
+        - name: Install and configure other things
           hosts: localhost
           connection: local
           roles:
-          - common
-          - nginx
-          - holland
-          - redis
-          - memcache
-          - php-fpm
-          - magento-ce
           - lsync
           - firewall
   deploy_roles:
@@ -237,20 +246,29 @@ resources:
         magento_admin_fname: { get_param: magento_fname }
         magento_admin_lname: { get_param: magento_lname }
         magento_admin_email: { get_param: magento_email }
+      config: { get_resource: magento_config }
+      server: { get_resource: magento_server }
+  deploy_other:
+    type: OS::Heat::SoftwareDeployment
+    depends_on: deploy_magento
+    properties:
+      signal_transport: TEMP_URL_SIGNAL
+      input_values:
         lsync_private_key: { get_attr: [ssh_key, private_key] }
         lsync_dirs: ['/var/www/vhosts', '/etc/nginx/conf.d']
         lsync_servers: { get_attr: [magento_secondary, private_ip] }
         firewall_global_rules: [ "0.0.0.0,0,22,tcp", "0.0.0.0,0,80,tcp", "0.0.0.0,0,443,tcp"]
         firewall_nodes: { get_attr: [magento_secondary, private_ip] }
         firewall_node_rules: []
-      config: { get_resource: magento_config }
+      config: { get_resource: other_config }
       server: { get_resource: magento_server }
   #Master Server
   magento_server:
     type: OS::Nova::Server
     properties:
       name: { get_param: "OS::stack_name" }
-      image: { get_param: server_image }
+#      image: { get_param: server_image }
+      image: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
       flavor: { get_param: server_flavor }
       key_name: { get_resource: ssh_key }
       software_config_transport: POLL_TEMP_URL
@@ -350,11 +368,12 @@ resources:
     properties:
       count: { get_param: server_count }
       resource_def:
-        type: https://raw.githubusercontent.com/rackspace-orchestration-templates/magento-small/master/magento_small.yaml
+        type: https://raw.githubusercontent.com/chrishultin/ansible-templates/master/magento_small_secondary.yaml
         properties:
           ssh_key: { get_resource: ssh_key }
           parent_stack_id: { get_param: "OS::stack_id" }
-          server_image: { get_param: server_image }
+#          server_image: { get_param: server_image }
+          server_image: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
           server_flavor: { get_param: server_flavor }
           apache_default_domain: { get_param: magento_url }
           server_name:
@@ -378,9 +397,9 @@ resources:
       - addresses: [ { get_attr: [magento_server, networks, private, 0] } ]
         port: 80
         condition: ENABLED
-#      - addresses: { get_attr: [magento_secondary, private_ip] }
-#        port: 80
-#        condition: ENABLED
+      - addresses: { get_attr: [magento_secondary, private_ip] }
+        port: 80
+        condition: ENABLED
       port: 80
       protocol: HTTP
       algorithm: ROUND_ROBIN
