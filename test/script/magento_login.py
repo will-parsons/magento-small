@@ -10,7 +10,7 @@ class MagentoInteraction(object):
     def __init__(self, ip, domain="example.com",
                  login_id="wp_user", password=""):
         self.ip = ip
-        self.domain = domain
+        self.domain = domain[7:-1]
         self.login_id = login_id
         self.password = password
         self.session = requests.Session()
@@ -30,6 +30,7 @@ class MagentoInteraction(object):
         r = self.session.post(url, data=data, allow_redirects=False, verify=False)
         while r.is_redirect:
             redirect_url = r.headers.get('location')
+            print redirect_url
             patched_url = re.sub(self.domain, self.ip, redirect_url)
             print "redirecting to {}...".format(patched_url)
             r = self.session.get(patched_url, allow_redirects=False, verify=False)
