@@ -161,7 +161,7 @@ resources:
   upload_role_config:
     type: OS::Heat::SoftwareConfig
     properties:
-      group: script
+      group: ungrouped
       outputs:
       - name: results
       config: |
