@@ -161,16 +161,18 @@ resources:
   upload_role_config:
     type: OS::Heat::SoftwareConfig
     properties:
-      group: ungrouped
+      group: script
       outputs:
-      - name: results
+      - name: clone_results
+      - name: checkout_results
+      - name: pull_results
       config: |
         #!/bin/bash
         set -e
-        git clone --single-branch --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
+        git clone --single-branch --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.clone_results 2>&1
         cd /etc/ansible/roles
-        git checkout stable
-        git pull
+        git checkout stable > $heat_outputs_path.checkout_results 2>&1
+        git pull > $heat_outputs_path.pull_results 2>&1
 
   magento_config:
     type: OS::Heat::SoftwareConfig
