@@ -114,6 +114,8 @@ parameters:
       - 64GB Instance
   server_count:
     type: number
+    label: Number of Secondary Servers
+    description: Number of secondary servers to create.  These will be synchronized from the primary node
     default: 0
     constraints:
     - range:
@@ -165,7 +167,10 @@ resources:
       config: |
         #!/bin/bash
         set -e
-        git clone -b 'stable' --single-branch --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
+        git clone --single-branch --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles > $heat_outputs_path.results 2>&1
+        cd /etc/ansible/roles
+        git checkout stable
+        git pull
 
   magento_config:
     type: OS::Heat::SoftwareConfig
