@@ -147,7 +147,8 @@ resources:
             stack: { get_param: "OS::stack_name" }
       flavor: { get_param: database_flavor }
       size: { get_param: database_disk }
-      datastore_type: percona
+      datastore_type: mysql
+      datastore_version: "5.1"
       databases:
       - name: magento
       users:
