@@ -10,7 +10,7 @@ description: |
  servers).  It also includes Cloud Monitoring and Cloud
  Backups.
 
- This stack is running 
+ This stack is running
  [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/),
  [nginx](http://nginx.org/en/),
  and [PHP FPM](http://php-fpm.org/about/).
@@ -258,7 +258,7 @@ resources:
       signal_transport: TEMP_URL_SIGNAL
       input_values:
         lsync_private_key: { get_attr: [ssh_key, private_key] }
-        lsync_dirs: ['/var/www/vhosts', '/etc/nginx/conf.d']
+        lsync_dirs: ['/var/www/vhosts']
         lsync_servers: { get_attr: [magento_secondary, private_ip] }
         firewall_global_rules: [ "0.0.0.0,0,22,tcp", "0.0.0.0,0,80,tcp", "0.0.0.0,0,443,tcp"]
         firewall_nodes: { get_attr: [magento_secondary, private_ip] }
@@ -371,8 +371,7 @@ resources:
     properties:
       count: { get_param: server_count }
       resource_def:
-#        type: https://raw.githubusercontent.com/chrishultin/ansible-templates/master/magento_small_secondary.yaml
-        type: https://raw.githubusercontent.com/rackspace-orchestration-templates/magento-small/master/magento_small_secondary.yaml
+        type: https://raw.githubusercontent.com/rackspace-orchestration-templates/magento_small/master/magento_small_secondary.yaml
         properties:
           ssh_key: { get_resource: ssh_key }
           parent_stack_id: { get_param: "OS::stack_id" }
@@ -380,6 +379,7 @@ resources:
           server_image: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
           server_flavor: { get_param: server_flavor }
           apache_default_domain: { get_param: magento_url }
+          master_server: { get_attr: [ magento_server, networks, private, 0 ] }
           server_name:
             str_replace:
               template: stack-secondary-%index%
