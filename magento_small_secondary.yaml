@@ -59,7 +59,6 @@ resources:
           roles:
           - common
           - nginx
-          - redis
           - memcache
           - php-fpm
           - firewall
@@ -78,10 +77,6 @@ resources:
       signal_transport: TEMP_URL_SIGNAL
       input_values:
         tz: "America/Chicago"
-        redis_instances:
-        - { name: 'fpc', port: '6381', persistent: 'FALSE', maxmemory: '1gb' }
-        - { name: 'obj', port: '6379', persistent: 'FALSE', maxmemory: '1gb' }
-        - { name: 'ses', port: '6380', persistent: 'TRUE', maxmemory: '1gb' }
         nginx_vhost_template: "magento_secondary"
         nginx_upstream_server: { get_param: master_server }
         nginx_vhost_str: { get_param: apache_default_domain }
@@ -102,7 +97,7 @@ resources:
       user_data_format: SOFTWARE_CONFIG
       metadata:
         rax-heat: { get_param: "parent_stack_id" }
-        build_config: "monitoring_defaults"
+        build_config: "monitoring_defaults"re
   magento_server_http_check:
     type: Rackspace::CloudMonitoring::Check
     depends_on: deploy_magento
