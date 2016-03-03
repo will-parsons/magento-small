@@ -1,11 +1,13 @@
 [![Circle CI](https://circleci.com/gh/rackspace-orchestration-templates/magento-small/tree/master.png?style=shield)](https://circleci.com/gh/rackspace-orchestration-templates/magento-small)
-#### Small Magento Site
+#### Magento 1.x - Production
 
-  A Single Linux server with
-  [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/)
-  installed with [nginx](http://nginx.org/en/), [PHP FPM](http://php-fpm.org/about/), a
-  Cloud Load Balancer for content caching, and a Cloud Database running
-  [Percona](https://www.percona.com/software/mysql-database/percona-server).
+This stack is intended for low to medium traffic production websites and can be scaled as needed to accommodate future growth.  This stack includes a Cloud Load Balancer, Cloud Database, and a Primary web server (plus optional secondary servers).  It also includes Cloud Monitoring and Cloud Backups.
+  
+This stack is running:
 
-  This deployment is intended for simple test cases and low traffic scenarios. It is not
-  designed for high traffic events and has limited scalability.
+-   [NGINX](http://nginx.org/en/)
+-   [PHP FPM](http://php-fpm.org/about/)
+-   [Redis](http://redis.io/)
+-   Cloud Database running MySQL 5.6 where available
+-   The latest [Magento 1.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
+- - With the option to upload an existing Magento site. 
