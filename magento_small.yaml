@@ -129,7 +129,7 @@ parameters:
         max: 10
   secondary_template:
     type: string
-    default: https://raw.githubusercontent.com/rackspace-orchestration-templates/magento-small/stable/magento-small-secondary.yaml
+    default: https://raw.githubusercontent.com/rackspace-orchestration-templates/magento-small/stable/magento_small_secondary.yaml
     label: Secondary Template
     description: Template to use for secondary servers
   ansible_branch:
