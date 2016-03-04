@@ -90,6 +90,13 @@ test-cases:
     ssh_private_key: { get_output: ssh_private_key } # Fetch from output-list of stack
     ssh_key_file: tmp/private_key # File to write with ssh_private_key
     tests:
+      - check_lb_login:
+            script:
+              commands:
+                - command: "./test/script/magento_login.py"
+                  command_args:
+                    - { get_output: magento_public_ip }
+                    - { get_output: magento_public_url }
     - check_master_login:
         script:
           commands:
@@ -120,10 +127,3 @@ test-cases:
             disable_known_hosts: True
             use_ssh_config: True
             fabfile: test/fabric/magento.py # Path to envassert test
-    - check_lb_login:
-        script:
-          commands:
-            - command: "./test/script/magento_login.py"
-              command_args:
-                - { get_output: magento_public_ip }
-                - { get_output: magento_public_url }
