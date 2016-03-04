@@ -49,15 +49,15 @@ resources:
       group: script
       outputs:
       - name: results
-        config:
-          str_replace:
-            template: |
-              #!/bin/bash
-              set -e
-              git clone -b 'tag' --single-branch --progress repository /etc/ansible/roles > $heat_outputs_path.results 2>&1
-            params:
-              tag: { get_param: ansible_branch}
-              repository: { get_param: ansible_repo }
+      config:
+        str_replace:
+          template: |
+            #!/bin/bash
+            set -e
+            git clone -b 'tag' --single-branch --progress repository /etc/ansible/roles > $heat_outputs_path.results 2>&1
+          params:
+            tag: { get_param: ansible_branch}
+            repository: { get_param: ansible_repo }
   magento_config:
     type: OS::Heat::SoftwareConfig
     properties:
