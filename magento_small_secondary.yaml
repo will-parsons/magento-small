@@ -73,6 +73,7 @@ resources:
           - redis
           - memcache
           - php-fpm
+          - magento-ce
           - firewall
   deploy_roles:
     type: OS::Heat::SoftwareDeployment
@@ -96,6 +97,7 @@ resources:
         nginx_vhost_template: "magento_secondary"
         nginx_upstream_server: { get_param: master_server }
         nginx_vhost_str: { get_param: apache_default_domain }
+        magento_role: 'secondary'
         firewall_global_rules: [ "0.0.0.0,0,22,tcp", "0.0.0.0,0,80,tcp", "0.0.0.0,0,443,tcp"]
       config:
         get_resource: magento_config

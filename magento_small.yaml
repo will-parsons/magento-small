@@ -76,12 +76,19 @@ parameters:
       description: |
         You must agree to the Magento Community Edition License
         which can be found here: http://opensource.org/licenses/osl-3.0.php
-  magento_samples:
-    type: boolean
-    default: False
-    label: Include Sample Data?
-    description: Include Magento Sample Data
   #Advanced Options
+  magento_install:
+    type: string
+    default: "Fresh install of the latest Magento CE 1.9.x release"
+    label: How should Magento be deployed?
+    description: |
+      This option determines whether or not to install Magento and/or the sample
+      data, or if you will need to upload your own Magento code.
+    constraints:
+    - allowed_values:
+      - "Fresh install of the latest Magento CE 1.9.x release"
+      - "Fresh install of the latest Magento CE 1.9.x release (including sample data)"
+      - "Don't install Magento. I will upload an existing Magento site (see instructions)"
   server_flavor:
     type: string
     default: 8 GB General Purpose v1
@@ -150,6 +157,8 @@ resources:
   database_pass:
     type: OS::Heat::RandomString
   holland_pass:
+    type: OS::Heat::RandomString
+  ssh_pass:
     type: OS::Heat::RandomString
   #SSH Key
   ssh_key:
@@ -223,6 +232,9 @@ resources:
         name: lsync_servers
         type: CommaDelimitedList
       - default: "[]"
+        name: lsync_exclude
+        type: CommaDelimitedList
+      - default: "[]"
         name: firewall_nodes
         type: CommaDelimitedList
       - default: "[]"
@@ -263,16 +275,16 @@ resources:
         magento_db_name: "magento"
         mysql_host_ip: { get_attr: [magento_database, hostname] }
         magento_sftp_user: "magento"
-        magento_sftp_password: { get_attr: [magento_pass, value] }
-        magento_version: 1.9.1.0
-        magento_sample_content_version: 1.9.1.0
-        magento_sample_content: { get_param: magento_samples }
+        magento_sftp_password: { get_attr: [ssh_pass, value] }
+        magento_reach_dropdown: { get_param: magento_install }
         magento_vhost_domain: { get_param: magento_url }
         magento_admin_user: { get_param: magento_user }
         magento_admin_pass: { get_attr: [magento_pass, value] }
         magento_admin_fname: { get_param: magento_fname }
         magento_admin_lname: { get_param: magento_lname }
         magento_admin_email: { get_param: magento_email }
+        magento_redis_host: { get_attr: [ magento_server, networks, private, 0 ] }
+        redis_host_ip: { get_attr: [ magento_server, networks, private, 0 ] }
       config: { get_resource: magento_config }
       server: { get_resource: magento_server }
   deploy_other:
@@ -283,10 +295,19 @@ resources:
       input_values:
         lsync_private_key: { get_attr: [ssh_key, private_key] }
         lsync_dirs: ['/var/www/vhosts']
+        lsync_exclude:
+        - str_replace:
+            template: '/var/www/vhosts/domain/httpdocs/var/log/'
+            params:
+              domain: { get_param: magento_url }
+        - str_replace:
+            template: '/var/www/vhosts/domain/httpdocs/var/cache/'
+            params:
+              domain: { get_param: magento_url }
         lsync_servers: { get_attr: [magento_secondary, private_ip] }
         firewall_global_rules: [ "0.0.0.0,0,22,tcp", "0.0.0.0,0,80,tcp", "0.0.0.0,0,443,tcp"]
         firewall_nodes: { get_attr: [magento_secondary, private_ip] }
-        firewall_node_rules: []
+        firewall_node_rules: ['32,6379,tcp','32,6380,tcp','32,6381,tcp']
       config: { get_resource: other_config }
       server: { get_resource: magento_server }
   #Master Server
@@ -402,13 +423,12 @@ resources:
           server_flavor: { get_param: server_flavor }
           apache_default_domain: { get_param: magento_url }
           master_server: { get_attr: [ magento_server, networks, private, 0 ] }
+          magento_pass: { get_attr: [magento_pass, value] }
           server_name:
             str_replace:
               template: stack-secondary-%index%
               params:
                 stack: { get_param: "OS::stack_name" }
-          ansible_branch: { get_param: ansible_branch}
-          ansible_repo: { get_param: ansible_repo }
   #Cloud Load Balancer
   load_balancer:
     type: Rackspace::Cloud::LoadBalancer
@@ -432,10 +452,10 @@ resources:
       protocol: HTTP
       algorithm: ROUND_ROBIN
       contentCaching: ENABLED
+      timeout: 120
       virtualIps:
       - type: PUBLIC
         ipVersion: IPV4
-      sessionPersistence: HTTP_COOKIE
       metadata:
         rax-heat: { get_param: "OS::stack_id" }
 
@@ -478,9 +498,13 @@ outputs:
     value:
       get_attr: [ssh_key, private_key]
   server_ip:
-    description: Server Public IP
+    description: Primary Server Public IP
     value:
       get_attr: [magento_server, accessIPv4]
+  ssh_password:
+    description: Magento SSH Password
+    value:
+      get_attr: [ ssh_pass, value ]
   secondary_ips:
     description: Secondary Node IPs
     value:
