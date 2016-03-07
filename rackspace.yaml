@@ -1,7 +1,7 @@
 schema-version: 1.0.0
 application-family: eCommerce
 application-name: Magento
-application-version: 1.9.2.0
+application-version: 1.9.x
 flavor: Production
 flavor-weight: 2
 popularity: 4
@@ -39,11 +39,16 @@ instructions: |
   to point your domain to the IP of this Cloud Server. Once you've done this,
   restart your browser and navigate to the site. The backend can be accessed using the
   "Magento Admin URL" listed in Stack Details, and you can login with the credentials
-  provided in the "Credentials" section of Stack Details..
+  provided in the "Credentials" section of Stack Details.
 
   #### Logging in via SSH
+  To update or upload code, you can log in as the 'magento' user via SSH or SFTP
+  into the 'httpdocs' folder. The password is provided n the "Credentials"
+  section of Stack Details.
+
   The private key provided in the passwords section can be used to login as
-  root via SSH. We have an article on how to use these keys with [Mac OS X and
+  root via SSH, which should be used for configuration changes only.
+  We have an article on how to use these keys with [Mac OS X and
   Linux](http://www.rackspace.com/knowledge_center/article/logging-in-with-a-ssh-private-key-on-linuxmac)
   as well as [Windows using
   PuTTY](http://www.rackspace.com/knowledge_center/article/logging-in-with-a-ssh-private-key-on-windows).
@@ -51,8 +56,8 @@ instructions: |
   #### Details of Your Setup
   This deployment was stood up using [Ansible](http://www.ansible.com/).  Once
   the deployment is up, Ansible will not run again unless you update the
-  stack. **Any changes made to the configuration may be overwritten when the stack
-  is updated.**
+  stack. **Any changes made to the configuration may be overwritten when the
+  stack is updated.**
 
   [Nginx](http://nginx.org/en/) is used as the web server and listens on port
   80 to handle web traffic. The configuration for your site can be
@@ -63,39 +68,62 @@ instructions: |
 
   [PHP-FPM](http://php.net/manual/en/install.fpm.php) is used to handle
   evaluation of all PHP-based pages. The configuration for this installation is
-  based on the URL of your site, and can be found within  /etc/php5/fpm/pools/yoursite.conf.
-  By default, PHP-FPM is running as the 'magento' user, listens on 127.0.0.1:9001.
+  based on the URL of your site, and can be found within
+  /etc/php5/fpm/pools/yoursite.conf.  Nginx is configured to send Magento Admin
+  Dashboard trafic to a second PHP-FPM pool for better memory management.
 
-  Object and session caching are handled by
+  Magento cache and and session storage are handled by
   [Redis](http://redis.io/). Redis is an in-memory, high performance key-value
   and is used for caching data and persisting user session data. This enhances
-  the performance of your site by reducing expensive database calls. Three caches
-  are configured: two for data caching and one for session persistence. You can
-  find the configuration of these caches in /etc/redis/.
+  the performance of your site by reducing expensive database calls. Three
+  caches are configured: two for data caching and one for session persistence.
+  You can find the configuration of these caches in /etc/redis/.
 
-  [Lsyncd](https://github.com/axkibe/lsyncd) has been installed in order to
-  sync static content from the Master server to all secondary servers.
-  When uploading content, it only needs to be uploaded to the Master node,
-  and will be automatically synchronized to all secondary nodes.
+  The Redis instances are running on the Primary server, and relevant Magento
+  configuration is under:
+   . app/etc/cache.xml
+   . app/etc/modules/Cm_RedisSession.xml
+  If you plan to replace the default Magento codebase with your own store, you
+  should take a copy of these files for reference.
 
-  MySQL is being hosted on a Cloud Database instance, running MySQL 5.6.
+
+  MySQL is being hosted on a Cloud Database instance.
   Backups for MySQL are provided by [Holland](http://wiki.hollandbackup.org/),
-  which is running on the Master server.
+  which is running on the Primary web server.
 
-  Backups are configured using Cloud Backups.  The Master server is configured
+  Backups are configured using Cloud Backups.  The Primary server is configured
   to back up /var/spool/holland and /var/www once per week, and to retain
   these backups for 30 days.
 
   In order to restore the Database from backup, you will need to first restore
   /var/spool/holland from the appropriate Cloud Backup.  After you have done so,
-  you will need to log into the Master server and restore the Holland backup
+  you will need to log into the Primary server and restore the Holland backup
   to the Cloud Database via the MySQL client.  For more assistance, please
   contact your Support team.
 
-  Monitoring is configured to verify that Apache is running on both the Master
+  Monitoring is configured to verify that Nginx is running on both the Primary
   and all secondary servers, as well as that the Cloud Load Balancer is
   functioning.  Additionally, the default CPU, RAM, and Filesystem checks
   are in place on all servers.
+
+  ### Notes for multi-server deployments
+  On the secondary servers, Nginx is configured to sent all Magento Admin
+  Dashboard traffic to the Primary web server; (proxy_pass if adminhtml cookie
+  is present.) This avoids the need to use a separate DNS subdomain for your
+  Admin traffic, and ensures all new content, such as product images, are
+  uploaded to the Primary server.
+
+  [Lsyncd](https://github.com/axkibe/lsyncd) has been installed in order to
+  sync static content from the Primary server to all secondary servers.
+  When uploading content, it only needs to be uploaded to the Primary node,
+  and will be automatically synchronized to all secondary nodes.
+
+  ### SSL Certificates
+  Using SSL is highly recommended. You can enable SSL by uploading your
+  certificate to the Cloud Load Balancer, which is configurable under Network ->
+  Cloud Load Balancers. Once it is set up, you can set your Frontend and Admin
+  use https:// base URLs. Please call Support for further guidance, or if your
+  actions lead to broken or looping redirects.
 
   #### Magento Plugins
   There are thousands of plugins that have been developed for Magento by the
@@ -116,22 +144,100 @@ instructions: |
   parameters, as this will result in the loss of all data within the
   database.
 
-  This stack will not ensure that Magento or the servers themselves are
-  up-to-date.  You are responsible for ensuring that all software is
-  updated.
+  #### Important security notes
+  The Magento code provided here is the latest at time of deployment, but
+  Magento does *not* auto-update. You, or your development team, are responsible
+  for applying any and all future Magento security patches to keep your site
+  secure. For awareness, we would highly recommend signing up to recieve
+  security alerts at https://magento.com/security
+
+  #### Uploading your existing Magento Website
+  If you already have an existing Magento website to import to this solution,
+  you should select the "Do not install Magento" option under Advanced Options,
+  and follow these steps.
+
+  #####1. Code upload
+
+  Use the `magento` SSH credentials to upload your code and content, via SFTP,
+  into to the `~/httpdocs` directory on the primary web server. The *LsyncD*
+  will synchronise content to any secondary servers.
+
+  #####2. Database import
+
+  Upload your database dump to the master server with the `magento` SSH
+  credentials. Put in in the home directory, above httpdocs, so that it's not
+  accessible over the web. We've set up credentials in the `~/.my.cnf` for you
+  to easily use the mysql command line client. The database will be called
+  `magento`.
+
+  Log on via SSH as the 'magento' user, and import with:
+
+  ```mysql magento < your-database-dump.sql```
+  or, if it's compressed:
+  ```zcat your-database-dump.sql.gz | mysql magento```
+
+  This can typically take up to 20 minutes, depending on your database size.
+
+  > Alternatively, you could use the MySQL Workbench or similar, using
+  > "TCP/IP over SSH". First use the `magento` SSH credentials for the SSH
+  > tunnel, then the Cloud Database hostname and MySQL credentials.
+
+
+  #####3. Magento Database configuration
+
+  Modify your `app/etc/local.xml` file with the Cloud Database details. The
+  database name is `magento`and the database username is `magento`. The hostname
+  will be your unique `xxxxx.rackspaceclouddb.com` host, and the password can be
+  found in the Stack Credentials and also in your `~/.my.cnf` file on the
+  primary web server.
+
+  #####4. Magento sessions + cache configuration
+
+  This step is *essential* for performance, and for the correct operation of
+  multi-server setups.
+
+  You should find the necessary config under `~/httpdocs/app/etc/cache.xml`,
+  which will be included by Magento if kept in that directory. If this has been
+  overwritten or removed by your version control or, you should also find the
+  details in `~/cache.xml`, which you can include in your `local.xml`.
+
+  There are multiple Redis instances running on the primary web server for
+  Magento sessions and Magento cache backend. Note that in order to use Redis
+  for sessions, you will also need to modify
+  `app/etc/modules/Cm_RedisSession.xml` and set `<active>` to "true" . The
+  fallback is to use the database.
+
+  Please do contact Rackspace support if you need assistance here, or if you'd
+  like to discuss using the highly available ObjectRocket platform for Redis.
+
+  #####5. Final steps
+
+  - You may wish to disable Magento's automatic redirection, in order to access
+  the Admin dashboard for testing and URL configuration.
+
+  > Log on via SSH as the 'magento' user, then you can set that with:
+  >
+  >     mysql magento -e 'UPDATE core_config_data SET value=0 WHERE path="web/url/redirect_to_base"';
+
+  - Delete all files under `httpdocs/var/cache` left over from any
+     previous environments.
+
+  - If we can help at any stage, please don't hesitate to call
+     Rackspace Support and our Magento experts will be happy to advise on
+     all aspects of your deployment.
 
 user-input-required: true
 description: |
-  This stack is intended for low to medium traffic production
-  websites and can be scaled as needed to accommodate future
-  growth.  This stack includes a Cloud Load Balancer, Cloud
-  Database, and a Master server (plus optional secondary
-  servers).  It also includes Cloud Monitoring and Cloud
-  Backups.
+  #### Magento 1.x - Production
 
-  This stack is running 
-  [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/),
-  [nginx](http://nginx.org/en/),
-  and [PHP FPM](http://php-fpm.org/about/).
-  with a Cloud Database running
-  [Percona](https://www.percona.com/software/mysql-database/percona-server).
+  This stack is intended for low to medium traffic production websites and can be scaled as needed to accommodate future growth.
+  This stack includes a Cloud Load Balancer, Cloud Database, and a Primary web server (plus optional secondary servers).
+  It also includes Cloud Monitoring and Cloud Backups.
+
+  This stack is running:
+  - [NGINX](http://nginx.org/en/)
+  - [PHP FPM](http://php-fpm.org/about/)
+  - [Redis](http://redis.io/)
+  - Cloud Database running MySQL 5.6 where available
+  - The latest [Magento 1.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
+   - With the option, and full instructions, for uploading an existing Magento site.

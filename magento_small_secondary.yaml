@@ -41,6 +41,8 @@ parameters:
   ansible_repo:
     type: string
     default: https://github.com/rackspace-orchestration-templates/ansible-roles.git
+  magento_pass:
+    type: string
 
 resources:
   upload_role_config:
@@ -98,6 +100,7 @@ resources:
         nginx_upstream_server: { get_param: master_server }
         nginx_vhost_str: { get_param: apache_default_domain }
         magento_role: 'secondary'
+        magento_sftp_password: { get_param: magento_pass }
         firewall_global_rules: [ "0.0.0.0,0,22,tcp", "0.0.0.0,0,80,tcp", "0.0.0.0,0,443,tcp"]
       config:
         get_resource: magento_config
