@@ -427,6 +427,8 @@ resources:
               template: stack-secondary-%index%
               params:
                 stack: { get_param: "OS::stack_name" }
+          ansible_branch: { get_param: ansible_branch}
+          ansible_repo: { get_param: ansible_repo }
   #Cloud Load Balancer
   load_balancer:
     type: Rackspace::Cloud::LoadBalancer
