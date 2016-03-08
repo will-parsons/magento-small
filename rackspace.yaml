@@ -156,13 +156,13 @@ instructions: |
   you should select the "Do not install Magento" option under Advanced Options,
   and follow these steps.
 
-  #####1. Code upload
+  ##### 1. Code upload
 
   Use the `magento` SSH credentials to upload your code and content, via SFTP,
   into to the `~/httpdocs` directory on the primary web server. The *LsyncD*
   will synchronise content to any secondary servers.
 
-  #####2. Database import
+  ##### 2. Database import
 
   Upload your database dump to the master server with the `magento` SSH
   credentials. Put in in the home directory, above httpdocs, so that it's not
@@ -183,7 +183,7 @@ instructions: |
   > tunnel, then the Cloud Database hostname and MySQL credentials.
 
 
-  #####3. Magento Database configuration
+  ##### 3. Magento Database configuration
 
   Modify your `app/etc/local.xml` file with the Cloud Database details. The
   database name is `magento`and the database username is `magento`. The hostname
@@ -191,7 +191,7 @@ instructions: |
   found in the Stack Credentials and also in your `~/.my.cnf` file on the
   primary web server.
 
-  #####4. Magento sessions + cache configuration
+  ##### 4. Magento sessions + cache configuration
 
   This step is *essential* for performance, and for the correct operation of
   multi-server setups.
@@ -210,7 +210,7 @@ instructions: |
   Please do contact Rackspace support if you need assistance here, or if you'd
   like to discuss using the highly available ObjectRocket platform for Redis.
 
-  #####5. Final steps
+  ##### 5. Final steps
 
   - You may wish to disable Magento's automatic redirection, in order to access
   the Admin dashboard for testing and URL configuration.
