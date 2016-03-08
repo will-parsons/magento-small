@@ -97,6 +97,7 @@ resources:
         - { name: 'obj', port: '6379', persistent: 'FALSE', maxmemory: '1gb' }
         - { name: 'ses', port: '6380', persistent: 'TRUE', maxmemory: '1gb' }
         nginx_vhost_template: "magento_secondary"
+        magento_vhost_template: "magento_secondary"
         nginx_upstream_server: { get_param: master_server }
         nginx_vhost_str: { get_param: apache_default_domain }
         magento_role: 'secondary'
