@@ -41,6 +41,7 @@ parameters:
     constraints:
     - allowed_pattern: "^[a-zA-Z0-9.-]{1,255}.[a-zA-Z]{2,15}$"
       description: Must be a valid domain name
+    immutable: true
   magento_user:
     type: string
     default: admin
@@ -49,21 +50,25 @@ parameters:
     constraints:
     - allowed_pattern: "^[a-zA-Z0-9]*$"
       description: Only can contain A-Z and 0-9
+    immutable: true
   magento_fname:
     type: string
     default: Joe
     label: Magento Admin First Name
     description: First name for Magento admin
+    immutable: true
   magento_lname:
     type: string
     default: User
     label: Magento Admin Last Name
     description: Last name for Magento admin
+    immutable: true
   magento_email:
     type: string
     default: admin@example.com
     label: Magento Admin E-Mail
     description: E-Mail for Magento admin
+    immutable: true
   magento_eula:
     type: boolean
     label: Agree to Terms?
@@ -74,6 +79,7 @@ parameters:
       description: |
         You must agree to the Magento Community Edition License
         which can be found here: http://opensource.org/licenses/osl-3.0.php
+    immutable: true
   #Advanced Options
   magento_install:
     type: string
@@ -87,6 +93,7 @@ parameters:
       - "Fresh install of the latest Magento CE 1.9.x release"
       - "Fresh install of the latest Magento CE 1.9.x release (including sample data)"
       - "Don't install Magento. I will upload an existing Magento site (see instructions)"
+    immutable: true
   server_flavor:
     type: string
     default: 8 GB General Purpose v1
@@ -96,12 +103,14 @@ parameters:
     - allowed_values:
       - 4 GB General Purpose v1
       - 8 GB General Purpose v1
+    immutable: true
   server_image:
     type: string
     default: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
     constraints:
     - allowed_values:
       - f4bbbce2-50b0-4b07-bf09-96c175a45f4b
+    immutable: true
   database_disk:
     type: number
     default: 10
@@ -137,16 +146,19 @@ parameters:
     default: https://raw.githubusercontent.com/rackspace-orchestration-templates/magento-small/stable/magento_small_secondary.yaml
     label: Secondary Template
     description: Template to use for secondary servers
+    immutable: true
   ansible_branch:
     type: string
     default: stable
     label: Git Branch or Tag for Ansible Roles
     description: The Ansible Roles will be pulled from Git, using the tag or branch provided
+    immutable: true
   ansible_repo:
     type: string
     default: https://github.com/rackspace-orchestration-templates/ansible-roles.git
     label: Git Repo for Ansible Roles
     description: The Ansible Roles will be pulled from Git, using the repo provided
+    immutable: true
 
 resources:
   #Passwords
