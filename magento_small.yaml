@@ -26,7 +26,6 @@ parameter_groups:
   - magento_eula
 - label: rax-dev-params
   parameters:
-  - server_image
   - secondary_template
   - ansible_source
 
@@ -105,10 +104,13 @@ parameters:
     immutable: true
   server_image:
     type: string
-    default: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
+    default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM) (Orchestration)
+    label: Server Image
+    description: Image to be used for all servers in this stack
     constraints:
     - allowed_values:
-      - f4bbbce2-50b0-4b07-bf09-96c175a45f4b
+      - Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM) (Orchestration)
+      - CentOS 7 (PVHVM) (Orchestration)
     immutable: true
   database_disk:
     type: number
