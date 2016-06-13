@@ -268,6 +268,7 @@ resources:
       input_values:
         tz: "America/Chicago"
         nginx_vhost_str: { get_param: magento_url }
+        nginx_vhost_template: "magento"
         holland_mysql_user: "holland"
         holland_mysql_password: { get_attr: [holland_pass, value] }
         holland_mysql_host: { get_attr: [magento_database, hostname] }
