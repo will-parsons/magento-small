@@ -11,15 +11,15 @@ parameters:
     default: example-0
   server_flavor:
     type: string
-    default: 4 GB General Purpose v1
+    default: 3.75G Compute v1
     constraints:
     - allowed_values:
-      - 2 GB General Purpose v1
-      - 4 GB General Purpose v1
-      - 8 GB General Purpose v1
+      - 3.75G Compute v1
+      - 7.5G Compute v1
+      - 15G Compute v1
   server_image:
     type: string
-    default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM) (Orchestration)
+    default: CentOS 7 (PVHVM) (Orchestration)
     label: Server Image
     description: Image to be used for all servers in this stack
     constraints:
@@ -76,6 +76,7 @@ resources:
           connection: local
           roles:
           - common
+          - varnish
           - nginx
           - redis
           - memcache
