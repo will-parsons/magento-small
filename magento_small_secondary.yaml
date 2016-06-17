@@ -19,10 +19,14 @@ parameters:
       - 8 GB General Purpose v1
   server_image:
     type: string
-    default: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
+    default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM) (Orchestration)
+    label: Server Image
+    description: Image to be used for all servers in this stack
     constraints:
     - allowed_values:
-      - f4bbbce2-50b0-4b07-bf09-96c175a45f4b
+      - Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM) (Orchestration)
+      - CentOS 7 (PVHVM) (Orchestration)
+    immutable: true
   ssh_key:
     type: string
     label: SSH Key
@@ -35,6 +39,14 @@ parameters:
     default: example.com
   master_server:
     type: string
+  ansible_source:
+    type: string
+    default: http://catalog.rs-heat.com/ansible-roles/ansible-roles.tar.gz
+    label: Ansible Tarball
+    description: The Ansible Roles will be pulled from the location provided
+    immutable: true
+  magento_pass:
+    type: string
 
 resources:
   upload_role_config:
@@ -43,10 +55,16 @@ resources:
       group: script
       outputs:
       - name: results
-      config: |
-        #!/bin/bash
-        set -e
-        git clone -b 'stable' --single-branch --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles
+      config:
+        str_replace:
+          template: |
+            #!/bin/bash
+            set -e
+            mkdir -p /etc/ansible/roles
+            wget ansible_source -O /tmp/ansible-roles.tar.gz 2>&1
+            tar -xf /tmp/ansible-roles.tar.gz --strip-components=1 -C /etc/ansible/roles
+          params:
+            ansible_source: { get_param: ansible_source }
   magento_config:
     type: OS::Heat::SoftwareConfig
     properties:
@@ -62,6 +80,7 @@ resources:
           - redis
           - memcache
           - php-fpm
+          - magento-ce
           - firewall
   deploy_roles:
     type: OS::Heat::SoftwareDeployment
@@ -83,8 +102,11 @@ resources:
         - { name: 'obj', port: '6379', persistent: 'FALSE', maxmemory: '1gb' }
         - { name: 'ses', port: '6380', persistent: 'TRUE', maxmemory: '1gb' }
         nginx_vhost_template: "magento_secondary"
+        magento_vhost_template: "magento_secondary"
         nginx_upstream_server: { get_param: master_server }
         nginx_vhost_str: { get_param: apache_default_domain }
+        magento_role: 'secondary'
+        magento_sftp_password: { get_param: magento_pass }
         firewall_global_rules: [ "0.0.0.0,0,22,tcp", "0.0.0.0,0,80,tcp", "0.0.0.0,0,443,tcp"]
       config:
         get_resource: magento_config
