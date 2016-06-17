@@ -1,18 +1,19 @@
 heat_template_version: 2015-10-15
 
 description: |
-  #### Magento 1.x - Production
+  #### Magento 2.x
 
-  This stack is intended for low to medium traffic production websites and can be scaled as needed to accommodate future growth.
+  This stack is intended for development, or low to medium traffic production websites and can be scaled as needed to accommodate future growth.
   This stack includes a Cloud Load Balancer, Cloud Database, and a Primary web server (plus optional secondary servers).
   It also includes Cloud Monitoring and Cloud Backups.
 
   This stack is running:
+  - [Varnish](https://www.varnish-cache.org)
   - [NGINX](http://nginx.org/en/)
   - [PHP FPM](http://php-fpm.org/about/)
   - [Redis](http://redis.io/)
   - Cloud Database running MySQL 5.6 where available
-  - The latest [Magento 1.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
+  - The latest [Magento 2.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
    - With the option, and full instructions, for uploading an existing Magento site.
 
 parameter_groups:
@@ -81,35 +82,35 @@ parameters:
   #Advanced Options
   magento_install:
     type: string
-    default: "Fresh install of the latest Magento CE 1.9.x release"
+    default: ""Don't install Magento. I will upload an existing Magento site (see instructions)"
     label: How should Magento be deployed?
     description: |
       This option determines whether or not to install Magento and/or the sample
       data, or if you will need to upload your own Magento code.
     constraints:
     - allowed_values:
-      - "Fresh install of the latest Magento CE 1.9.x release"
-      - "Fresh install of the latest Magento CE 1.9.x release (including sample data)"
+      - "Fresh install of the latest Magento CE 2.x release"
+      - "Fresh install of the latest Magento CE 2.x release (including sample data)"
       - "Don't install Magento. I will upload an existing Magento site (see instructions)"
     immutable: true
   server_flavor:
     type: string
-    default: 8 GB General Purpose v1
+    default: 7.5G Compute v1
     label: Flavor for Magento Server
     description: Flavor of Cloud Server to use for Magento
     constraints:
     - allowed_values:
-      - 4 GB General Purpose v1
-      - 8 GB General Purpose v1
+      - 3.75G Compute v1
+      - 7.5G Compute v1
+      - 15G Compute v1
     immutable: true
   server_image:
     type: string
-    default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM) (Orchestration)
+    default: CentOS 7 (PVHVM) (Orchestration)
     label: Server Image
     description: Image to be used for all servers in this stack
     constraints:
     - allowed_values:
-      - Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM) (Orchestration)
       - CentOS 7 (PVHVM) (Orchestration)
     immutable: true
   database_disk:
@@ -128,6 +129,7 @@ parameters:
     description: Flavor for the Magento Cloud Database
     constraints:
     - allowed_values:
+      - 2GB Instance
       - 4GB Instance
       - 8GB Instance
       - 16GB Instance
@@ -220,6 +222,7 @@ resources:
           connection: local
           roles:
           - common
+          - varnish
           - nginx
           - holland
           - redis
@@ -414,7 +417,7 @@ resources:
       StartTimeMinute: 0
       HourInterval: null
       DayOfWeekId: 0
-      Frequency: "Weekly"
+      Frequency: "Daily"
       VersionRetention: 30
   #Secondary Server
   magento_secondary:
