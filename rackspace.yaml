@@ -1,7 +1,7 @@
 schema-version: 1.0.0
 application-family: eCommerce
 application-name: Magento
-application-version: 1.9.x
+application-version: 2.x
 flavor: Production
 flavor-weight: 2
 popularity: 4
@@ -151,93 +151,102 @@ instructions: |
   secure. For awareness, we would highly recommend signing up to recieve
   security alerts at https://magento.com/security
 
-  #### Uploading your existing Magento Website
-  If you already have an existing Magento website to import to this solution,
-  you should select the "Do not install Magento" option under Advanced Options,
-  and follow these steps.
+ #### Uploading your existing Magento Website
+If you already have an existing Magento website to import to this solution,
+you should select the "Do not install Magento" option under Advanced Options,
+and follow these steps.
 
-  ##### 1. Code upload
+#####1. Code upload
 
-  Use the `magento` SSH credentials to upload your code and content, via SFTP,
-  into to the `~/httpdocs` directory on the primary web server. The *LsyncD*
-  will synchronise content to any secondary servers.
+Use the `magento` SSH credentials to upload your code and content, via SFTP,
+into to the `~/httpdocs` directory on the primary web server. The *LsyncD*
+will synchronise content to any secondary servers.
 
-  ##### 2. Database import
+#####2. Database import
 
-  Upload your database dump to the master server with the `magento` SSH
-  credentials. Put in in the home directory, above httpdocs, so that it's not
-  accessible over the web. We've set up credentials in the `~/.my.cnf` for you
-  to easily use the mysql command line client. The database will be called
-  `magento`.
+Upload your database dump to the master server with the `magento` SSH
+credentials. Put in in the home directory, above httpdocs, so that it's not
+accessible over the web. We've set up credentials in the `~/.my.cnf` for you
+to easily use the mysql command line client. The database will be called
+`magento`.
 
-  Log on via SSH as the 'magento' user, and import with:
+Log on via SSH as the 'magento' user, and import with:
 
-  ```mysql magento < your-database-dump.sql```
-  or, if it's compressed:
-  ```zcat your-database-dump.sql.gz | mysql magento```
+```mysql magento < your-database-dump.sql```
+or, if it's compressed:
+```zcat your-database-dump.sql.gz | mysql magento```
 
-  This can typically take up to 20 minutes, depending on your database size.
+This can typically take up to 20 minutes, depending on your database size.
 
-  > Alternatively, you could use the MySQL Workbench or similar, using
-  > "TCP/IP over SSH". First use the `magento` SSH credentials for the SSH
-  > tunnel, then the Cloud Database hostname and MySQL credentials.
+> Alternatively, you could use the MySQL Workbench or similar, using
+> "TCP/IP over SSH". First use the `magento` SSH credentials for the SSH
+> tunnel, then the Cloud Database hostname and MySQL credentials.
 
 
-  ##### 3. Magento Database configuration
+#####3. Magento Database configuration
 
-  Modify your `app/etc/local.xml` file with the Cloud Database details. The
-  database name is `magento`and the database username is `magento`. The hostname
-  will be your unique `xxxxx.rackspaceclouddb.com` host, and the password can be
-  found in the Stack Credentials and also in your `~/.my.cnf` file on the
-  primary web server.
+Modify your `app/etc/env.php` file with the Cloud Database details. The
+database name is `magento`and the database username is `magento`. The hostname
+will be your unique `xxxxx.rackspaceclouddb.com` host, and the password can be
+found in the Stack Credentials and also in your `~/.my.cnf` file on the
+primary web server.
 
-  ##### 4. Magento sessions + cache configuration
+#####4. Magento cache configuration
 
-  This step is *essential* for performance, and for the correct operation of
-  multi-server setups.
+This step is *essential* for performance, and for the correct operation of
+multi-server setups.
 
-  You should find the necessary config under `~/httpdocs/app/etc/cache.xml`,
-  which will be included by Magento if kept in that directory. If this has been
-  overwritten or removed by your version control or, you should also find the
-  details in `~/cache.xml`, which you can include in your `local.xml`.
+You should find the necessary config under `~/httpdocs/app/etc/env.php`,
+which will be included by Magento if kept in that directory. If this has been
+overwritten or removed by your version control or, you should also find the
+details in `~/env.php.example`, which you can include in your own `env.php`.
 
-  There are multiple Redis instances running on the primary web server for
-  Magento sessions and Magento cache backend. Note that in order to use Redis
-  for sessions, you will also need to modify
-  `app/etc/modules/Cm_RedisSession.xml` and set `<active>` to "true" . The
-  fallback is to use the database.
+There are multiple Redis instances running on the primary web server for
+Magento sessions and Magento cache backend. Note that in order to use Redis
+for sessions, you will also need to modify
+`app/etc/modules/Cm_RedisSession.xml` and set `<active>` to "true" . The
+fallback is to use the database.
 
-  Please do contact Rackspace support if you need assistance here, or if you'd
-  like to discuss using the highly available ObjectRocket platform for Redis.
+Please do contact Rackspace support if you need assistance here, or if you'd
+like to discuss using the highly available ObjectRocket platform for Redis.
 
-  ##### 5. Final steps
+#####4. Magento sessions configuration
 
-  - You may wish to disable Magento's automatic redirection, in order to access
-  the Admin dashboard for testing and URL configuration.
+- In Magento 2.0, Redis support for sessions was dropped. 
+- Memcached for PHP 7.0 is [not stable yet](https://github.com/iuscommunity/wishlist/issues/38)
+- Recommend using files for the time being, or Database for multi-server architectures.
+- Subject to change when php70u-memcached is available or if Magento reintroduce the Cm_RedisSession module for Magento2. 
 
-  > Log on via SSH as the 'magento' user, then you can set that with:
-  >
-  >     mysql magento -e 'UPDATE core_config_data SET value=0 WHERE path="web/url/redirect_to_base"';
 
-  - Delete all files under `httpdocs/var/cache` left over from any
-     previous environments.
+#####6. Final steps
 
-  - If we can help at any stage, please don't hesitate to call
-     Rackspace Support and our Magento experts will be happy to advise on
-     all aspects of your deployment.
+- You may wish to disable Magento's automatic redirection, in order to access
+the Admin dashboard for testing and URL configuration.
+
+> Log on via SSH as the 'magento' user, then you can set that with:
+>
+>     mysql magento -e 'UPDATE core_config_data SET value=0 WHERE path="web/url/redirect_to_base"';
+
+- Delete all files under `httpdocs/var/cache` left over from any
+   previous environments.
+
+- If we can help at any stage, please don't hesitate to call
+   Rackspace Support and our Magento experts will be happy to advise on
+   all aspects of your deployment.
 
 user-input-required: true
 description: |
-  #### Magento 1.x - Production
+  #### Magento 2.x - Production
 
   This stack is intended for low to medium traffic production websites and can be scaled as needed to accommodate future growth.
   This stack includes a Cloud Load Balancer, Cloud Database, and a Primary web server (plus optional secondary servers).
   It also includes Cloud Monitoring and Cloud Backups.
 
   This stack is running:
+  - [Varnish](https://www.varnish-cache.org)
   - [NGINX](http://nginx.org/en/)
   - [PHP FPM](http://php-fpm.org/about/)
   - [Redis](http://redis.io/)
   - Cloud Database running MySQL 5.6 where available
-  - The latest [Magento 1.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
+  - The latest [Magento 2.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
    - With the option, and full instructions, for uploading an existing Magento site.
