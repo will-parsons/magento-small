@@ -14,7 +14,7 @@ description: |
   - [Redis](http://redis.io/)
   - Cloud Database running MySQL 5.6 where available
   - The latest [Magento 2.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
-   - With the option, and full instructions, for uploading an existing Magento site.
+  - With the option, and full instructions, for uploading an existing Magento site.
 
 parameter_groups:
 - label: Magento Settings
@@ -82,7 +82,7 @@ parameters:
   #Advanced Options
   magento_install:
     type: string
-    default: ""Don't install Magento. I will upload an existing Magento site (see instructions)"
+    default: "Don't install Magento. I will upload an existing Magento site (see instructions)"
     label: How should Magento be deployed?
     description: |
       This option determines whether or not to install Magento and/or the sample
@@ -95,14 +95,14 @@ parameters:
     immutable: true
   server_flavor:
     type: string
-    default: 7.5G Compute v1
+    default: 7.5 GB Compute v1
     label: Flavor for Magento Server
     description: Flavor of Cloud Server to use for Magento
     constraints:
     - allowed_values:
-      - 3.75G Compute v1
-      - 7.5G Compute v1
-      - 15G Compute v1
+      - 3.75 GB Compute v1
+      - 7.5 GB Compute v1
+      - 15 GB Compute v1
     immutable: true
   server_image:
     type: string
