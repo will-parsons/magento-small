@@ -1,7 +1,7 @@
 Description
 ===========
 
-#### Magento 1.x - Production
+#### Magento 2.x - Production
 
 This stack is intended for low to medium traffic production websites and can be scaled as needed to accommodate future growth.
 This stack includes a Cloud Load Balancer, Cloud Database, and a Primary web server (plus optional secondary servers).
@@ -12,7 +12,7 @@ This stack is running:
 - [PHP FPM](http://php-fpm.org/about/)
 - [Redis](http://redis.io/)
 - Cloud Database running MySQL 5.6 where available
-- The latest [Magento 1.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
+- The latest [Magento 2.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
  - With the option, and full instructions, for uploading an existing Magento site.
 
 
@@ -60,9 +60,12 @@ the deployment is up, Ansible will not run again unless you update the
 stack. **Any changes made to the configuration may be overwritten when the
 stack is updated.**
 
+[Varnish](https://www.varnish-cache.org) is in use for Magento Full Page Cache. 
+VCL configuration is from [Magento2 source](https://github.com/magento/magento2/blob/2.0/app/code/Magento/PageCache/etc/varnish4.vcl)
+
+
 [Nginx](http://nginx.org/en/) is used as the web server and listens on port
-80 to handle web traffic. The configuration for your site can be
-found in /etc/nginx/conf.d/. There will be a default site
+8080 to handle web traffic. Configuration follows [Magento2 source](https://github.com/magento/magento2/blob/2.0/nginx.conf.sample) and can be found in /etc/nginx/conf.d/. There will be a default site
 configuration and a separate one for your domain. Magento itself is
 installed in /var/www/vhosts. You will find a directory with the name of
 website you entered as a part of this deployment.
@@ -73,19 +76,20 @@ based on the URL of your site, and can be found within
 /etc/php5/fpm/pools/yoursite.conf.  Nginx is configured to send Magento Admin
 Dashboard trafic to a second PHP-FPM pool for better memory management.
 
-Magento cache and and session storage are handled by
-[Redis](http://redis.io/). Redis is an in-memory, high performance key-value
+Magento cache backend is stored in [Redis](http://redis.io/). 
+Redis is an in-memory, high performance key-value
 and is used for caching data and persisting user session data. This enhances
 the performance of your site by reducing expensive database calls. Three
 caches are configured: two for data caching and one for session persistence.
 You can find the configuration of these caches in /etc/redis/.
 
-The Redis instances are running on the Primary server, and relevant Magento
-configuration is under:
- . app/etc/cache.xml
- . app/etc/modules/Cm_RedisSession.xml
+Redis is running on the Primary server, and relevant Magento
+configuration is under: app/etc/env.php
 If you plan to replace the default Magento codebase with your own store, you
-should take a copy of these files for reference.
+should take a copy of these files for reference. 
+
+For a more resiliend cache backend, ask your support team about setting up
+a hosted Redis instance on our ObjectRocket platform. 
 
 
 MySQL is being hosted on a Cloud Database instance.
@@ -186,21 +190,21 @@ This can typically take up to 20 minutes, depending on your database size.
 
 #####3. Magento Database configuration
 
-Modify your `app/etc/local.xml` file with the Cloud Database details. The
+Modify your `app/etc/env.php` file with the Cloud Database details. The
 database name is `magento`and the database username is `magento`. The hostname
 will be your unique `xxxxx.rackspaceclouddb.com` host, and the password can be
 found in the Stack Credentials and also in your `~/.my.cnf` file on the
 primary web server.
 
-#####4. Magento sessions + cache configuration
+#####4. Magento cache configuration
 
 This step is *essential* for performance, and for the correct operation of
 multi-server setups.
 
-You should find the necessary config under `~/httpdocs/app/etc/cache.xml`,
+You should find the necessary config under `~/httpdocs/app/etc/env.php`,
 which will be included by Magento if kept in that directory. If this has been
 overwritten or removed by your version control or, you should also find the
-details in `~/cache.xml`, which you can include in your `local.xml`.
+details in `~/env.php.example`, which you can include in your own `env.php`.
 
 There are multiple Redis instances running on the primary web server for
 Magento sessions and Magento cache backend. Note that in order to use Redis
@@ -211,7 +215,15 @@ fallback is to use the database.
 Please do contact Rackspace support if you need assistance here, or if you'd
 like to discuss using the highly available ObjectRocket platform for Redis.
 
-#####5. Final steps
+#####4. Magento sessions configuration
+
+- In Magento 2.0, Redis support for sessions was dropped. 
+- Memcached for PHP 7.0 is [not stable yet](https://github.com/iuscommunity/wishlist/issues/38)
+- Recommend using files for the time being, or Database for multi-server architectures.
+- Subject to change when php70u-memcached is available or if Magento reintroduce the Cm_RedisSession module for Magento2. 
+
+
+#####6. Final steps
 
 - You may wish to disable Magento's automatic redirection, in order to access
 the Admin dashboard for testing and URL configuration.
