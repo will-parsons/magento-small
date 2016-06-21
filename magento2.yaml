@@ -320,6 +320,24 @@ resources:
         firewall_node_rules: ['32,6379,tcp','32,6380,tcp','32,6381,tcp']
       config: { get_resource: other_config }
       server: { get_resource: magento_server }
+      
+  primary-boot-volume:
+    type: OS::Cinder::Volume
+    properties:
+      name:  primary-boot-volume
+      size: 50
+      volume_type: SSD
+      image: { get_param: server_image }
+      
+  secondary-boot-volume:
+    type: OS::Cinder::Volume
+    properties:
+      count: { get_param: server_count }
+      name:  secondary-boot-volume
+      size: 50
+      volume_type: SSD
+      image: { get_param: server_image }
+      
   #Master Server
   magento_server:
     type: OS::Nova::Server
